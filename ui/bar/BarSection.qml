@@ -21,6 +21,21 @@ Item {
     return typeof entry === "object" && entry !== null ? entry : ({})
   }
 
+  function registryComponent(widgetId) {
+    var registry = bar && bar.barWidgetRegistry
+    var widgets = registry && registry.widgets
+    return widgets && widgets[widgetId] ? widgets[widgetId].component : null
+  }
+
+  function clockSettings() {
+    var layout = bar && bar.barConfig && bar.barConfig.layout
+    var entries = layout && Array.isArray(layout.center) ? layout.center : []
+    for (var i = 0; i < entries.length; i++) {
+      if (itemId(entries[i]) === "omarchy.clock") return entries[i]
+    }
+    return ({ id: "omarchy.clock" })
+  }
+
   RowLayout {
     id: row
     anchors.fill: parent
@@ -38,6 +53,9 @@ Item {
         id: familiarLoader
         required property var modelData
         readonly property string itemName: root.itemId(modelData)
+        readonly property var stockClockComponent: itemName === "clock"
+          ? root.registryComponent("omarchy.clock") : null
+        readonly property bool hostsStockClock: itemName === "clock" && stockClockComponent !== null
         readonly property var componentForItem: {
           switch (itemName) {
           case "activities": return activitiesComponent
@@ -47,7 +65,7 @@ Item {
           case "tray": return trayComponent
           case "workspaces": return workspacesComponent
           case "notifications": return notificationsComponent
-          case "clock": return clockComponent
+          case "clock": return stockClockComponent || clockComponent
           case "spacer": return spacerComponent
           case "omarchyWidgets": return stockWidgetsComponent
           default: return null
@@ -61,11 +79,15 @@ Item {
         onLoaded: {
           if (!item) return
           if ("bar" in item) item.bar = root.bar
-          if ("settings" in item) item.settings = root.itemSettings(modelData)
+          if ("settings" in item) item.settings = hostsStockClock
+            ? root.clockSettings() : root.itemSettings(modelData)
           if ("profileId" in item) item.profileId = String((root.bar.profile && root.bar.profile.id) || "")
           if ("format" in item) item.format = root.bar.clockFormat
           if ("fontFamily" in item) item.fontFamily = root.bar.fontFamily
+          if (hostsStockClock) root.bar.registerHostedItem(item)
         }
+
+        Component.onDestruction: if (hostsStockClock && item) root.bar.unregisterHostedItem(item)
       }
     }
 

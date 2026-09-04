@@ -36,6 +36,36 @@ Item {
     hostedStockItems = hostedStockItems.filter(function(candidate) { return candidate !== item })
   }
 
+  function hostedBarWidget(pluginId, methodName, openedOnly) {
+    var id = String(pluginId || "")
+    for (var i = 0; i < hostedStockItems.length; i++) {
+      var item = hostedStockItems[i]
+      if (!item || String(item.moduleName || "") !== id) continue
+      if (openedOnly && item.opened !== true) continue
+      if (!methodName || typeof item[methodName] === "function") return item
+    }
+    return null
+  }
+
+  function summonBarWidget(pluginId) {
+    var item = hostedBarWidget(pluginId, "open", false)
+    if (!item) return false
+    item.open()
+    return true
+  }
+
+  function hideBarWidget(pluginId) {
+    var item = hostedBarWidget(pluginId, "close", true)
+      || hostedBarWidget(pluginId, "close", false)
+    if (!item) return false
+    item.close()
+    return true
+  }
+
+  function isBarWidgetOpen(pluginId) {
+    return hostedBarWidget(pluginId, "", true) !== null
+  }
+
   function switchPanelFrom(owner, direction) {
     var current = hostedStockItems.indexOf(owner)
     if (current < 0 || hostedStockItems.length < 2) return false
