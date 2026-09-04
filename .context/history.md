@@ -97,4 +97,18 @@
 **Changes:** Added the overlay-owned per-screen DockHost and dock kit, desktop-entry pin resolution, running-app grouping, focus-or-launch behavior, safe toplevel close requests, pin persistence, context actions, profile running indicators, Gaussian macOS magnification, and delayed autohide. Wired DockHost into the keep-loaded Overlay without changing its IPC/overview stub or enabling a panel kind.
 **Files:** `Overlay.qml`, `Service.qml`, `ui/dock/DockHost.qml`, `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `ui/dock/DockSeparator.qml`, `ui/dock/RunningIndicator.qml`, `ui/dock/DockContextMenu.qml`, `tests/validate.sh`, `.context/decisions.md`, `.context/history.md`, `.context/.active-agent`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. No live plugin, shell, Omarchy config, or Hyprland config was touched; `applyHypr()` remains skipped/refused.
-**Commit:** pending (`Build M2 overlay dock`); branch/commit permission was denied twice
+**Commit:** `7f8c601` Build M2 overlay dock (Sonic committed on andy/m2-dock after Tails git deny).
+
+## [2026-09-04] M2 dock icon/pin match start
+**Agent:** Sonic → Tails
+**Branch:** andy/m2-dock
+**Changes:** Match running app_id to DesktopEntries.startupClass; never use raw appId as icon; pin desktop id.
+**Commit:** pending Tails
+
+## [2026-09-04] M2 dock icon/pin match complete
+**Agent:** Tails (ACP codex)
+**Branch:** andy/m2-dock
+**Changes:** Resolved dock windows through exact, normalized, case-insensitive, and StartupWMClass desktop-entry matches; grouped windows under canonical desktop IDs; retained unresolved pinned tiles; copied AppLibrary-style URL, absolute-path, themed-icon, and executable-fallback handling; and made pinning persist matched desktop IDs while legacy class pins remain removable.
+**Files:** `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `ui/dock/DockContextMenu.qml`, `tests/validate.sh`, `.context/history.md`, `.context/.active-agent`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, `git diff --check`, and the Loader `implicitHeight:` guard passed. No shell/bar restart, live Omarchy plugin copy, Hyprland write, or `applyHypr()` call was performed.
+**Commit:** this commit (hash reported in handoff)

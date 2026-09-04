@@ -37,6 +37,12 @@ assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
 assert_contains ui/bar/WorkspacePips.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'shell.firstPartyServiceFor("omarchy.notifications")'
 assert_contains ui/bar/ActivitiesButton.qml 'root.bar.shell.summon(root.bar.manifest.id, '\''{"surface":"overview"}'\'')'
+assert_contains ui/dock/DockSurface.qml 'apps[i].startupClass'
+assert_contains ui/dock/DockSurface.qml 'var desktopId = entryId(windowDesktop, appId)'
+assert_contains ui/dock/DockSurface.qml 'icon: desktop ? (desktop.icon || "") : ""'
+assert_contains ui/dock/DockIcon.qml 'Quickshell.iconPath("application-x-executable", true)'
+assert_contains ui/dock/DockIcon.qml 'value.indexOf("file://") === 0 || value.indexOf("image://") === 0'
+assert_contains ui/dock/DockContextMenu.qml 'root.entry.pinId || root.entry.desktopId'
 
 mapfile -t qml_files < <(find "$ROOT" -type f -name '*.qml' -not -path '*/.git/*' | sort)
 "$QMLLINT" -I "$OMARCHY_SHELL" "${qml_files[@]}"

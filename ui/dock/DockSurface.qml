@@ -24,22 +24,42 @@ Rectangle {
   }
 
   function desktopEntry(id) {
-    var target = normalize(id)
+    var rawTarget = String(id || "").trim()
+    var target = normalize(rawTarget)
+    var foldedTarget = target.toLowerCase()
     var apps = DesktopEntries.applications.values || []
+    for (var i = 0; i < apps.length; i++) {
+      if (String(apps[i].id || "").trim() === rawTarget) return apps[i]
+    }
     for (var i = 0; i < apps.length; i++) {
       if (normalize(apps[i].id) === target) return apps[i]
     }
+    for (var i = 0; i < apps.length; i++) {
+      if (normalize(apps[i].id).toLowerCase() === foldedTarget) return apps[i]
+    }
+    for (var i = 0; i < apps.length; i++) {
+      if (String(apps[i].startupClass || "").trim() === rawTarget) return apps[i]
+    }
     return null
+  }
+
+  function entryId(desktop, fallback) {
+    var id = desktop ? normalize(desktop.id) : ""
+    return id || normalize(fallback)
   }
 
   function rebuild() {
     var windows = running || []
     var byId = ({})
+    var desktops = ({})
     for (var i = 0; i < windows.length; i++) {
       var appId = normalize(windows[i].appId)
       if (!appId) continue
-      if (!byId[appId]) byId[appId] = []
-      byId[appId].push(windows[i])
+      var windowDesktop = desktopEntry(appId)
+      var desktopId = entryId(windowDesktop, appId)
+      if (!byId[desktopId]) byId[desktopId] = []
+      byId[desktopId].push(windows[i])
+      if (windowDesktop) desktops[desktopId] = windowDesktop
     }
     var nextPinned = []
     var nextRunning = []
@@ -47,14 +67,16 @@ Rectangle {
     for (var p = 0; p < pinned.length; p++) {
       var pinnedId = normalize(pinned[p])
       var desktop = desktopEntry(pinnedId)
-      if (!desktop) continue
-      nextPinned.push({ desktopId: pinnedId, name: desktop.name || pinnedId, icon: desktop.icon || "", windows: byId[pinnedId] || [], windowCount: (byId[pinnedId] || []).length, pinned: true })
-      included[pinnedId] = true
+      var canonicalId = entryId(desktop, pinnedId)
+      if (!canonicalId || included[canonicalId]) continue
+      var pinnedWindows = byId[canonicalId] || []
+      nextPinned.push({ desktopId: canonicalId, pinId: pinnedId, name: desktop ? (desktop.name || canonicalId) : canonicalId, icon: desktop ? (desktop.icon || "") : "", windows: pinnedWindows, windowCount: pinnedWindows.length, pinned: true })
+      included[canonicalId] = true
     }
-    if (showRunning) Object.keys(byId).forEach(function(appId) {
-      if (included[appId]) return
-      var desktop = root.desktopEntry(appId)
-      nextRunning.push({ desktopId: appId, name: desktop ? desktop.name : appId, icon: desktop ? desktop.icon : appId, windows: byId[appId], windowCount: byId[appId].length, pinned: false })
+    if (showRunning) Object.keys(byId).forEach(function(desktopId) {
+      if (included[desktopId]) return
+      var desktop = desktops[desktopId] || root.desktopEntry(desktopId)
+      nextRunning.push({ desktopId: root.entryId(desktop, desktopId), pinId: "", name: desktop ? (desktop.name || desktopId) : desktopId, icon: desktop ? (desktop.icon || "") : "", windows: byId[desktopId], windowCount: byId[desktopId].length, pinned: false })
     })
     pinnedEntries = nextPinned
     runningEntries = nextRunning

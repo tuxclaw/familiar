@@ -50,7 +50,10 @@ Rectangle {
           anchors.fill: parent
           hoverEnabled: true
           onClicked: {
-            if (modelData === "Pin" || modelData === "Unpin") root.pinRequested(String(root.entry.desktopId), !root.pinned)
+            if (modelData === "Pin" || modelData === "Unpin") {
+              var pinId = root.pinned ? String(root.entry.pinId || root.entry.desktopId) : String(root.entry.desktopId)
+              root.pinRequested(pinId, !root.pinned)
+            }
             else if (modelData === "New window") root.newWindowRequested(root.entry)
             else root.quitRequested(root.entry)
             root.close()

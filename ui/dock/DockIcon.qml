@@ -13,6 +13,15 @@ Item {
   signal activated(var entry)
   signal contextRequested(var entry, point position)
 
+  function iconSource(iconName) {
+    var value = String(iconName || "")
+    if (value.length === 0) return Quickshell.iconPath("application-x-executable", true)
+    if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
+    if (value.charAt(0) === "/") return Util.fileUrl(value)
+    var themed = Quickshell.iconPath(value, true)
+    return themed.length > 0 ? themed : Quickshell.iconPath("application-x-executable", true)
+  }
+
   implicitWidth: iconSize * magnifyScale + 8
   implicitHeight: iconSize * magnifyScale + 12
 
@@ -23,11 +32,7 @@ Item {
     width: root.iconSize * root.magnifyScale
     height: width
     fillMode: Image.PreserveAspectFit
-    source: {
-      var value = String(root.entry.icon || "")
-      return value.length > 0 ? Quickshell.iconPath(value, true)
-        : Quickshell.iconPath("application-x-executable", true)
-    }
+    source: root.iconSource(root.entry.icon)
     Behavior on width { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
   }
 
