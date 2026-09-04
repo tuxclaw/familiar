@@ -3,16 +3,15 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m1-bars` @ `24d910a` (handoff `4ebaede`)
+**Branch:** `andy/m2-dock` @ `7f8c601`
 **Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced; git checkout may lag)
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
-M0 + **M1 complete**. Plugin enabled. Tux 14:06 PDT: Activities, clock calendar, Notifications, pips, and right-side stock icons all work.
-Host: stock-style ModuleSlots + `pressModuleClickTarget` (`24d910a`). Never assign Loader `implicitHeight` (read-only; cold-start crash). Host fallback `errorString` is still broken in Omarchy `shell.qml` — Familiar must load or the bar vanishes.
-Next: M2 dock when Tux says go. Do not write `~/.config/hypr/familiar.lua` until keybinds/gaps.
+M0 + **M1 complete**. **M2 dock in** (`7f8c601`): overlay-owned `DockHost`, GNOME/Plasma dock off, macOS on. Live Overlay/Service/ui/dock synced; `familiar-bar` still up; no `familiar-dock` layer on GNOME (correct). Hyprland writes still skipped.
+To see the dock: switch profile to macos (changes the bar) or set `bar.dockEnabled=on`. Do not write `~/.config/hypr/familiar.lua` until keybinds/gaps.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
