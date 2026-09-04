@@ -53,26 +53,14 @@ Target runtime: **Omarchy 4.0.2 Quattro** (`omarchy-shell`, one Quickshell proce
 | M4 | Overview + switcher | Done in tree |
 | M5 | Motion polish, `preview.png`, marketplace | Not started |
 
-Current work branch: `andy/m4-overview`. GitHub default is still `andy/m1-bars` — clone the M4 branch until `main` exists.
+Default branch: `main` (M0–M4). Milestone branches `andy/m0-skeleton` … `andy/m4-overview` remain as history.
 
 ## Install
 
 ```sh
-# Until default branch is main, clone the current work branch:
-git clone -b andy/m4-overview \
-  https://github.com/tuxclaw/familiar.git \
-  ~/.config/omarchy/plugins/io.github.tuxclaw.familiar
-
-omarchy plugin validate ~/.config/omarchy/plugins/io.github.tuxclaw.familiar
-omarchy bar use io.github.tuxclaw.familiar
-omarchy restart shell
-```
-
-Later, when `main` is the default:
-
-```sh
 omarchy plugin add https://github.com/tuxclaw/familiar.git --enable --yes
 omarchy bar use io.github.tuxclaw.familiar
+omarchy restart shell
 ```
 
 Plugin directory **must** be `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` — that id is the live contract, not the GitHub repo name.
