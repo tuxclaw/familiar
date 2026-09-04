@@ -8,9 +8,9 @@ import "ui/bar"
 Item {
   id: root
 
-  required property string omarchyPath
-  required property var barWidgetRegistry
-  required property var barConfig
+  property string omarchyPath: ""
+  property var barWidgetRegistry: ({})
+  property var barConfig: ({})
   property var shell: null
   property var manifest: null
   property var pluginRegistry: null
