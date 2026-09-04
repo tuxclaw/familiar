@@ -3,15 +3,15 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m1-bars` @ `15819f3`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (sync QML from this commit; git checkout may lag)
+**Branch:** `andy/m1-bars` @ `a6acae9`
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced from this commit; git checkout may lag)
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
 M0 + M1 bars in. Plugin **enabled**. GNOME look OK.
-Click contracts landed in `15819f3` (stock `hl.dsp.focus` pips, stock `omarchy.clock` host, notifications `showRecentHistory`, Activities overlay summon, layer-shell input). **Awaiting Tux pointer proof.** No M2 until clicks are confirmed.
+Click iteration 2 `a6acae9`: left/center use `qs.Ui.WidgetButton` (same path as working right icons); clock is registry `omarchy.clock` only. **Awaiting Tux pointer proof** (Activities, clock calendar, Notifications, pips). No M2 until confirmed.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
