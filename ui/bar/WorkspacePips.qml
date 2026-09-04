@@ -8,7 +8,15 @@ RowLayout {
   property var bar: null
   spacing: Style.spacing.sm
   readonly property var workspaceValues: Hyprland.workspaces.values || []
-  readonly property var displayedWorkspaces: workspaceValues.length > 0 ? workspaceValues : [null, null, null]
+  readonly property var displayedWorkspaces: {
+    var ids = [1, 2, 3, 4, 5]
+    for (var i = 0; i < workspaceValues.length; i++) {
+      var id = workspaceValues[i] && workspaceValues[i].id
+      if (id > 0 && id <= 10 && ids.indexOf(id) === -1) ids.push(id)
+    }
+    ids.sort(function(a, b) { return a - b })
+    return ids
+  }
 
   Repeater {
     model: root.displayedWorkspaces
@@ -17,25 +25,21 @@ RowLayout {
       id: pip
       required property var modelData
       required property int index
-      readonly property bool focused: modelData
-        ? Hyprland.focusedWorkspace === modelData
-        : index === 0
-      width: focused ? 18 : 8
-      height: 8
+      readonly property int workspaceId: Number(modelData)
+      readonly property bool focused: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === workspaceId
+      width: focused ? 18 : 16
+      height: 16
       radius: height / 2
       color: focused ? Color.bar.active : Color.bar.text
       opacity: focused ? 1 : 0.55
 
       MouseArea {
         anchors.fill: parent
-        cursorShape: pip.modelData ? Qt.PointingHandCursor : Qt.ArrowCursor
+        cursorShape: Qt.PointingHandCursor
         onClicked: {
-          if (!pip.modelData)
+          if (!root.bar || typeof root.bar.run !== "function")
             return
-
-          const workspace = pip.modelData.id ?? pip.modelData.name
-          if (workspace !== undefined && workspace !== null)
-            Hyprland.dispatch("workspace " + workspace)
+          root.bar.run("hyprctl dispatch workspace " + pip.workspaceId)
         }
       }
     }

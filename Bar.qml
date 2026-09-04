@@ -49,6 +49,11 @@ Item {
     clickTargets = clickTargets.filter(function(item) { return item !== target })
   }
 
+  function run(command) {
+    if (!command) return
+    Quickshell.execDetached(["bash", "-lc", command])
+  }
+
   function hostedBarWidget(pluginId, methodName, openedOnly) {
     var id = String(pluginId || "")
     for (var i = 0; i < hostedStockItems.length; i++) {

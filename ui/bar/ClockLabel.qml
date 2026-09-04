@@ -38,8 +38,11 @@ Text {
         }
       }
 
-      if (root.bar && root.bar.shell && typeof root.bar.shell.summon === "function")
+      if (root.bar && root.bar.shell && typeof root.bar.shell.summon === "function") {
         root.bar.shell.summon("omarchy.clock")
+        return
+      }
+      Quickshell.execDetached(["omarchy-shell", "shell", "summon", "omarchy.clock", "{}"])
     }
   }
 
