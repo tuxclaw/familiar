@@ -25,8 +25,8 @@ Item {
     return service ? service.getProfile() : "unknown"
   }
 
-  function reapply(outputPath) {
-    return service ? service.reapply(outputPath || "") : "unknown"
+  function reapply() {
+    return service ? service.reapply() : "unknown"
   }
 
   function open(payloadJson) {

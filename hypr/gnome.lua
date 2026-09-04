@@ -22,7 +22,7 @@ hl.unbind("ALT + GRAVE")
 o.bind("ALT + GRAVE", "Familiar window switcher",
   familiar .. " summon " .. id .. " '{\"surface\":\"switcher\",\"scope\":\"window\"}'")
 hl.unbind("ALT + F4")
-o.bind("ALT + F4", "Close window", hl.dsp.killactive)
+o.bind("ALT + F4", "Close window", hl.dsp.window.close())
 
 hl.unbind("SUPER + S")
 o.bind("SUPER + S", "Familiar overview", surface("overview"))

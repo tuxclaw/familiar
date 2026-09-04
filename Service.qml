@@ -12,33 +12,36 @@ Item {
   property var manifest: null
 
   property var profiles: ({})
+  readonly property var profileIds: ["gnome", "plasma", "macos"]
   property string profile: "gnome"
   readonly property var currentProfile: profiles[profile] || profiles.gnome || ({})
   property var barConfig: ({})
 
   signal profileApplied(string profileId)
 
-  readonly property string pluginDir: {
-    var path = Qt.resolvedUrl(".").toString()
-    return path.startsWith("file://") ? path.slice(7) : path
+  function isKnownProfile(profileId) {
+    return typeof profileId === "string" && profileIds.indexOf(profileId) >= 0
   }
 
   function ingest(profileId, contents) {
     try {
+      if (!isKnownProfile(profileId))
+        throw new Error("unknown profile " + profileId)
       var parsed = JSON.parse(contents || "{}")
       if (parsed.id !== profileId || !parsed.bar || !parsed.keymap)
         throw new Error("profile shape does not match " + profileId)
       var next = Object.assign({}, profiles)
       next[profileId] = parsed
       profiles = next
-      if (barConfig.profile && profiles[barConfig.profile]) profile = barConfig.profile
+      if (isKnownProfile(barConfig.profile) && profiles[barConfig.profile])
+        profile = barConfig.profile
     } catch (error) {
       console.warn("Familiar: unable to load profile " + profileId + ": " + error)
     }
   }
 
   function setProfile(profileId) {
-    if (!profiles[profileId]) return "unknown"
+    if (!isKnownProfile(profileId) || !profiles[profileId]) return "unknown"
     profile = profileId
     persist(profileId)
     applyHypr("")
@@ -57,8 +60,8 @@ Item {
     return profile
   }
 
-  function reapply(outputPath) {
-    return applyHypr(outputPath || "")
+  function reapply() {
+    return applyHypr("")
   }
 
   function resolved(key, profileValue) {
@@ -78,34 +81,25 @@ Item {
     persistProcess.command = [
       "sh", "-c",
       "set -eu; config=\"$HOME/.config/omarchy/shell.json\"; "
-        + "[ -f \"$config\" ] || exit 0; tmp=$(mktemp); "
+        + "[ -f \"$config\" ] || exit 0; config_dir=${config%/*}; "
+        + "tmp=$(mktemp \"$config_dir/.shell.json.XXXXXX\"); "
+        + "trap 'rm -f -- \"$tmp\"' EXIT HUP INT TERM; "
         + "jq --arg profile \"$1\" '.bar = (.bar // {}) | .bar.profile = $profile' \"$config\" > \"$tmp\"; "
-        + "mv \"$tmp\" \"$config\"; omarchy-shell shell reloadConfig",
+        + "mv -f -- \"$tmp\" \"$config\"; trap - EXIT HUP INT TERM; "
+        + "omarchy-shell shell reloadConfig",
       "familiar-persist", profileId
     ]
     persistProcess.running = true
   }
 
-  // M0 safety gate: generation is permitted only under this checkout's tests/out.
-  // No live Hyprland path is written and no compositor reload is performed.
+  // M0 safety gate: no path-bearing apply is exposed over overlay IPC.
+  // Generation is exercised only by tests/hypr.sh; live writes stay disabled.
   function applyHypr(outputPath) {
     if (!outputPath) return "skipped"
-    var outputUrl = Qt.resolvedUrl(outputPath).toString()
-    var output = outputUrl.startsWith("file://") ? outputUrl.slice(7) : outputUrl
-    var allowedRoot = pluginDir + "tests/out/"
-    if (!output.startsWith(allowedRoot)) return "refused"
-
-    hyprProcess.command = [
-      "bash", pluginDir + "tests/hypr.sh",
-      "--profile", currentProfile.keymap || profile,
-      "--output", output
-    ]
-    hyprProcess.running = true
-    return "queued"
+    return "refused"
   }
 
   Process { id: persistProcess }
-  Process { id: hyprProcess }
 
   FileView {
     path: Qt.resolvedUrl("profiles/gnome.json")
@@ -139,7 +133,8 @@ Item {
       try {
         var config = JSON.parse(text() || "{}")
         root.barConfig = config.bar || {}
-        if (root.barConfig.profile && root.profiles[root.barConfig.profile])
+        if (root.isKnownProfile(root.barConfig.profile)
+            && root.profiles[root.barConfig.profile])
           root.profile = root.barConfig.profile
       } catch (error) {
         console.warn("Familiar: unable to read shell bar settings: " + error)

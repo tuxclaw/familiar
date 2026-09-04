@@ -14,3 +14,17 @@
 **Validation:** `omarchy plugin validate .` passed; `tests/validate.sh` passed; `tests/hypr.sh` generated all three test Lua files; `luac -p` passed on each generated file; no repository symlinks.
 **Assumptions:** Global `keepLoaded` covers both overlay and service; Quattro's documented `shellConfigMutator` remains the preferred installed-runtime persistence path; qmllint's known `qs.*` and `PanelWindow` environmental warnings are acceptable because the same warnings occur for the stock bar and lint exits 0.
 **Commit:** `Build Familiar M0 plugin skeleton` (this commit)
+
+## [2026-09-04] M0 review
+**Agent:** Sam (ok), Shadow (timeout — not re-dispatched)
+**Branch:** andy/m0-skeleton @ 8fd2fbc
+**Changes:** none (read-only)
+**Sam verdict:** blocker. `Service.qml` `reapply(outputPath)` lexical `startsWith` + `tests/hypr.sh` follows symlinks under `tests/out/`. Warnings: prototype-key profile ids; jq tmp not beside shell.json.
+**Shadow partial:** `hl.dsp.killactive` not in `/usr/share/hypr/stubs/hl.meta.lua` (used in gnome/macos.lua). No final sign-off.
+
+## [2026-09-04] M0 review fixes complete
+**Agent:** Tails
+**Branch:** andy/m0-skeleton
+**Changes:** Removed path arguments from overlay/service `reapply()`, kept all M0 live applies skipped/refused, allowlisted profile ids, made fallback persistence use an adjacent atomic tempfile, replaced invalid close dispatchers, and made test Lua generation atomically replace regular destinations while refusing symlinks.
+**Validation:** `tests/validate.sh` passed; `tests/hypr.sh` passed its embedded symlink-refusal case; explicit `--output` symlink test exited 3 without changing its target; `luac -p` passed for all three generated Lua files; `git diff --check` passed; no repository symlinks or test temp artifacts remained.
+**Commit:** `Fix M0 review safety findings` (this commit)
