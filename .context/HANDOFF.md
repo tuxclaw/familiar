@@ -3,19 +3,19 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m3-launcher` @ `693c24b`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (M3 Overlay + `ui/launcher` + `lib/Apps.js` copied 15:00 PDT; plugin reloaded). Click-prove pending.
+**Branch:** `andy/m3-launcher` @ `cd2e31c`
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (M3 launcher + dock Applications tile live). Tux 15:16 PDT: launcher/dock tile working.
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json extra:** `bar.dockEnabled=on`, `bar.dockAutohide=on`, `bar.dockPinned=chromium,org.gnome.Nautilus,obsidian`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
-M0 + **M1 complete**. **M2 dock live**. **M3 launcher in repo** @ `693c24b` — not live-synced. `tests/validate.sh` + `tests/hypr.sh` + `git diff --check` pass. Hyprland writes still skipped.
+M0 + **M1 complete**. **M2 dock live**. **M3 launcher complete** (Tux 15:16 PDT). Dock Applications tile at right end (hover bottom edge; autohide). GNOME bar has no Applications item — tile is dock-only. Hyprland writes still skipped.
 
-Summon: `omarchy-shell shell summon io.github.tuxclaw.familiar '{"surface":"launcher"}'` or GNOME/Plasma **Applications**. Esc / Enter / arrows. Frecency `~/.local/state/familiar/frecency.json`. Commands after 2 chars from omarchy-menu.jsonc.
+Hot-reload lesson: new dock tiles may not mount until `omarchy restart shell` (Lua dispatch `hl.dsp.exec_cmd("omarchy-launch-shell")`). Do not spawn multiple shells.
 
-**Next:** Tux click-prove launcher (Applications or summon). Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps. Click-outside-to-close is unproven (Esc is wired).
+**Next:** M4 overview + switcher (`SPEC.md` M4). Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
