@@ -6,7 +6,7 @@ Familiar is independent software and is not affiliated with, endorsed by, or spo
 
 ## M0 safety status
 
-**Do not enable this plugin yet.** M0 supplies only the plugin contracts, a per-monitor clock bar, profile data, and offline Hyprland Lua generation. It does not implement the dock, launcher, overview, or switcher surfaces.
+**Development build:** the bar, dock, and launcher milestones are implemented. Overview and switcher remain preview stubs, and Hyprland application is deliberately safety-gated while profile keybind work is out of scope.
 
 The service deliberately skips pathless applies and refuses every path-bearing apply during M0. Only `tests/hypr.sh` generates Lua, using atomic replacement inside its output directory and refusing symlink destinations. The plugin does not edit `~/.config/hypr`, add a `require` to `hyprland.lua`, reload Hyprland, spawn another Quickshell process, or modify the live desktop when loaded or destroyed.
 
@@ -29,7 +29,15 @@ Each output hoists the shared `familiar`, `id`, and `surface()` locals exactly o
 
 ## Profile API
 
-The keep-loaded overlay routes `setProfile`, `cycleProfile`, `getProfile`, and pathless `reapply()` to the injected service. `open(payloadJson)` accepts JSON with `surface` set to `launcher`, `overview`, or `switcher`; these are routing stubs in M0.
+The keep-loaded overlay routes `setProfile`, `cycleProfile`, `getProfile`, and pathless `reapply()` to the injected service. `open(payloadJson)` accepts JSON with `surface` set to `launcher`, `overview`, or `switcher`. The launcher is live; overview and switcher are still routing stubs.
+
+Summon the launcher with:
+
+```sh
+omarchy-shell shell summon io.github.tuxclaw.familiar '{"surface":"launcher"}'
+```
+
+Its layout follows the active profile (`grid`, `kickoff`, or `spotlight`). Type to filter, use the arrow keys to select, Enter to launch, and Escape to close. Launch frequency is stored in `~/.local/state/familiar/frecency.json`; matching Omarchy menu actions appear after two query characters.
 
 The preferred profile persistence path uses the host's `pluginRegistry.shellConfigMutator` and mutates its cloned config in place. If unavailable, the service has a `jq` fallback for the normal installed-plugin runtime. This path is not exercised by validation.
 

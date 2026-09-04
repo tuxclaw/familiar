@@ -1,7 +1,9 @@
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
+import qs.Commons
 import "ui/dock"
+import "ui/launcher"
 
 Item {
   id: root
@@ -49,6 +51,7 @@ Item {
 
     surface = requestedSurface
     payload = parsed
+    if (opened && requestedSurface === "launcher") launcher.open(parsed)
     opened = true
     return "ok"
   }
@@ -100,7 +103,10 @@ Item {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
-    onVisibleChanged: if (visible) keyCatcher.forceActiveFocus()
+    onVisibleChanged: if (visible) {
+      if (root.surface === "launcher") launcher.open(root.payload)
+      else keyCatcher.forceActiveFocus()
+    }
 
     Rectangle {
       anchors.fill: parent
@@ -123,15 +129,26 @@ Item {
       }
     }
 
+    LauncherSurface {
+      id: launcher
+      anchors.fill: parent
+      visible: root.surface === "launcher"
+      style: root.profile.launcher ? root.profile.launcher.style : "grid"
+      service: root.service
+      onDismiss: root.close()
+    }
+
     Rectangle {
       id: card
+
+      visible: root.surface !== "launcher"
 
       anchors.centerIn: parent
       width: Math.max(1, Math.min(900, overlayWindow.width - 64))
       height: Math.max(1, Math.min(640, overlayWindow.height - 64))
       radius: 16
-      color: "#ee20242b"
-      border.color: "#556b7280"
+      color: Color.menu.background
+      border.color: Color.menu.border
       border.width: 1
 
       MouseArea {
@@ -148,7 +165,7 @@ Item {
           margins: 28
         }
         text: root.surface === "overview" ? "Activities" : root.surface === "switcher" ? "Window Switcher" : "Application Launcher"
-        color: "white"
+        color: Color.menu.text
         font.pixelSize: 28
         font.bold: true
       }
@@ -182,7 +199,7 @@ Item {
               width: windowList.width
               height: 64
               radius: 10
-              color: windowMouse.containsMouse ? "#44505a68" : "#33404954"
+              color: windowMouse.containsMouse ? Color.menu.selectedBackground : Color.menu.background
 
               Text {
                 anchors {
@@ -197,7 +214,7 @@ Item {
                   var title = String(windowButton.modelData.title || "Untitled window")
                   return appId + "  —  " + title
                 }
-                color: "white"
+                color: Color.menu.text
                 font.pixelSize: 17
               }
 
@@ -220,19 +237,19 @@ Item {
             width: windowList.width
             horizontalAlignment: Text.AlignHCenter
             text: "No open windows"
-            color: "#c0ffffff"
+            color: Color.muted
             font.pixelSize: 17
           }
         }
       }
 
       Text {
-        visible: root.surface === "launcher" || root.surface === "switcher"
+        visible: root.surface === "switcher"
         anchors.centerIn: parent
         text: root.surface === "switcher"
           ? "Window switching is coming soon"
-          : "Application search is coming soon"
-        color: "#d0ffffff"
+          : ""
+        color: Color.menu.text
         font.pixelSize: 20
       }
     }
