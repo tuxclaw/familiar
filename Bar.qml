@@ -14,6 +14,8 @@ Item {
   property var shell: null
   property var manifest: null
   property var pluginRegistry: null
+  property var activePopout: null
+  property var clickTargets: []
 
   property string fontFamily: Style.font.family
   property var hostedStockItems: []
@@ -34,6 +36,17 @@ Item {
 
   function unregisterHostedItem(item) {
     hostedStockItems = hostedStockItems.filter(function(candidate) { return candidate !== item })
+  }
+
+  function registerClickTarget(target) {
+    if (!target || clickTargets.indexOf(target) !== -1) return
+    var next = clickTargets.slice()
+    next.push(target)
+    clickTargets = next
+  }
+
+  function unregisterClickTarget(target) {
+    clickTargets = clickTargets.filter(function(item) { return item !== target })
   }
 
   function hostedBarWidget(pluginId, methodName, openedOnly) {
@@ -85,8 +98,18 @@ Item {
     return false
   }
 
-  function requestPopout(owner) {}
-  function releasePopout(owner) {}
+  function requestPopout(owner) {
+    if (activePopout === owner) return
+    if (activePopout) {
+      if ("closeForPopoutSwitch" in activePopout) activePopout.closeForPopoutSwitch()
+      else if ("close" in activePopout) activePopout.close()
+    }
+    activePopout = owner
+  }
+
+  function releasePopout(owner) {
+    if (activePopout === owner) activePopout = null
+  }
   function showTooltip(owner, text) {}
   function hideTooltip(owner) {}
 
