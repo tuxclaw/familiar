@@ -3,15 +3,15 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m2-dock` @ `7f8c601`
+**Branch:** `andy/m2-dock` @ `8aa31e0`
 **Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced; git checkout may lag)
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
-M0 + **M1 complete**. **M2 dock in** (`7f8c601`): overlay-owned `DockHost`, GNOME/Plasma dock off, macOS on. Live Overlay/Service/ui/dock synced; `familiar-bar` still up; no `familiar-dock` layer on GNOME (correct). Hyprland writes still skipped.
-To see the dock: switch profile to macos (changes the bar) or set `bar.dockEnabled=on`. Do not write `~/.config/hypr/familiar.lua` until keybinds/gaps.
+M0 + **M1 complete**. **M2 dock live** (`8aa31e0`): overlay `DockHost`, GNOME bar + `dockEnabled=on` + autohide. Tux 14:42: Obsidian/OpenClaw icons work (`heuristicLookup`/`byId`). Hyprland writes still skipped.
+Do not write `~/.config/hypr/familiar.lua` until keybinds/gaps.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
