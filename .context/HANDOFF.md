@@ -3,9 +3,9 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m1-bars` @ `a6acae9`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced from this commit; git checkout may lag)
-**Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
+**Branch:** `andy/m1-bars` @ `24d910a`
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced; git checkout may lag)
+**Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`) — re-enabled 14:04 after ModuleSlot load fix
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
