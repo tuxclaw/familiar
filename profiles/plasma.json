@@ -1,0 +1,54 @@
+{
+  "id": "plasma",
+  "label": "Plasma",
+  "bar": {
+    "position": "bottom",
+    "height": 40,
+    "reserve": true,
+    "transparent": "solid",
+    "left": ["appMenu", "tasks"],
+    "center": [],
+    "right": ["tray", "omarchyWidgets", "clock", "spacer"],
+    "clockFormat": "HH:mm\nddd d MMM"
+  },
+  "dock": {
+    "enabled": false,
+    "position": "bottom",
+    "iconSize": 48,
+    "magnification": false,
+    "autohide": false,
+    "showRunning": true,
+    "runningIndicator": "line"
+  },
+  "launcher": {
+    "style": "kickoff",
+    "hotkey": "ALT + F1"
+  },
+  "overview": {
+    "style": "presentWindows",
+    "hotkey": "SUPER + W"
+  },
+  "switcher": {
+    "style": "thumbnailList",
+    "hotkey": "ALT + TAB",
+    "scope": "window"
+  },
+  "tokens": {
+    "radius": 6,
+    "density": 1.0,
+    "font": "sans",
+    "motion": "linear"
+  },
+  "hypr": {
+    "gapsIn": 4,
+    "gapsOut": 6,
+    "border": 2,
+    "rounding": 6,
+    "blur": true,
+    "shadow": false,
+    "floatByDefault": false,
+    "focusFollowsMouse": false,
+    "titlebarButtonsLeft": false
+  },
+  "keymap": "plasma"
+}

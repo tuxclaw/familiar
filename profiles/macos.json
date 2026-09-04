@@ -1,0 +1,54 @@
+{
+  "id": "macos",
+  "label": "Mac",
+  "bar": {
+    "position": "top",
+    "height": 28,
+    "reserve": true,
+    "transparent": "blur",
+    "left": ["appMenu", "activeApp"],
+    "center": [],
+    "right": ["tray", "omarchyWidgets", "clock"],
+    "clockFormat": "ddd d MMM  h:mm AP"
+  },
+  "dock": {
+    "enabled": true,
+    "position": "bottom",
+    "iconSize": 52,
+    "magnification": true,
+    "autohide": false,
+    "showRunning": true,
+    "runningIndicator": "dot"
+  },
+  "launcher": {
+    "style": "spotlight",
+    "hotkey": "SUPER + SPACE"
+  },
+  "overview": {
+    "style": "missionControl",
+    "hotkey": "CTRL + UP"
+  },
+  "switcher": {
+    "style": "iconRow",
+    "hotkey": "SUPER + TAB",
+    "scope": "app"
+  },
+  "tokens": {
+    "radius": 10,
+    "density": 1.0,
+    "font": "sans",
+    "motion": "springy"
+  },
+  "hypr": {
+    "gapsIn": 6,
+    "gapsOut": 10,
+    "border": 0,
+    "rounding": 10,
+    "blur": true,
+    "shadow": true,
+    "floatByDefault": true,
+    "focusFollowsMouse": false,
+    "titlebarButtonsLeft": true
+  },
+  "keymap": "macos"
+}

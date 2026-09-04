@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.tuxclaw.familiar",
+  "name": "Familiar",
+  "version": "0.2.0",
+  "author": "Dan (tuxclaw)",
+  "license": "MIT",
+  "description": "Switch Omarchy between GNOME, Plasma, and Mac desktop paradigms.",
+  "kinds": ["bar", "overlay", "service"],
+  "entryPoints": {
+    "bar": "Bar.qml",
+    "overlay": "Overlay.qml",
+    "service": "Service.qml"
+  },
+  "keepLoaded": true,
+  "bar": {
+    "displayName": "Familiar bar",
+    "defaults": {
+      "profile": "gnome",
+      "clockFormat": "auto",
+      "trayVisible": true,
+      "hostOmarchyWidgets": true,
+      "dockEnabled": "auto",
+      "dockPosition": "auto",
+      "dockIconSize": 48,
+      "dockMagnification": "auto",
+      "dockAutohide": "auto",
+      "dockPinned": "chromium,alacritty,nautilus,obsidian"
+    },
+    "schema": [
+      {
+        "key": "profile",
+        "type": "enum",
+        "label": "Desktop profile",
+        "options": ["gnome", "plasma", "macos"]
+      },
+      {
+        "key": "clockFormat",
+        "type": "string",
+        "label": "Clock format (auto = profile default)"
+      },
+      {
+        "key": "trayVisible",
+        "type": "boolean",
+        "label": "Show system tray"
+      },
+      {
+        "key": "hostOmarchyWidgets",
+        "type": "boolean",
+        "label": "Host stock Omarchy bar widgets"
+      },
+      {
+        "key": "dockEnabled",
+        "type": "enum",
+        "label": "Dock",
+        "options": ["auto", "on", "off"]
+      },
+      {
+        "key": "dockPosition",
+        "type": "enum",
+        "label": "Dock position",
+        "options": ["auto", "bottom", "left", "right"]
+      },
+      {
+        "key": "dockIconSize",
+        "type": "integer",
+        "label": "Dock icon size (px)"
+      },
+      {
+        "key": "dockMagnification",
+        "type": "enum",
+        "label": "Dock magnify on hover",
+        "options": ["auto", "on", "off"]
+      },
+      {
+        "key": "dockAutohide",
+        "type": "enum",
+        "label": "Dock auto-hide",
+        "options": ["auto", "on", "off"]
+      },
+      {
+        "key": "dockPinned",
+        "type": "string",
+        "label": "Dock pinned apps (comma-separated desktop IDs)"
+      }
+    ]
+  },
+  "overlay": {
+    "displayName": "Familiar surfaces",
+    "defaults": {
+      "overviewProvider": "familiar",
+      "launcherProvider": "familiar"
+    },
+    "schema": [
+      {
+        "key": "overviewProvider",
+        "type": "enum",
+        "label": "Overview",
+        "options": ["familiar", "none"]
+      },
+      {
+        "key": "launcherProvider",
+        "type": "enum",
+        "label": "Launcher",
+        "options": ["familiar", "none"]
+      }
+    ]
+  },
+  "service": {
+    "defaults": {
+      "manageHyprland": true,
+      "manageKeybinds": true
+    }
+  }
+}

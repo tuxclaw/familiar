@@ -1,0 +1,54 @@
+{
+  "id": "gnome",
+  "label": "GNOME",
+  "bar": {
+    "position": "top",
+    "height": 32,
+    "reserve": true,
+    "transparent": "solid",
+    "left": ["activities", "workspaces"],
+    "center": ["clock", "notifications"],
+    "right": ["omarchyWidgets"],
+    "clockFormat": "ddd HH:mm"
+  },
+  "dock": {
+    "enabled": false,
+    "position": "bottom",
+    "iconSize": 48,
+    "magnification": false,
+    "autohide": false,
+    "showRunning": true,
+    "runningIndicator": "pill"
+  },
+  "launcher": {
+    "style": "grid",
+    "hotkey": "SUPER + A"
+  },
+  "overview": {
+    "style": "gnome",
+    "hotkey": "SUPER"
+  },
+  "switcher": {
+    "style": "iconRow",
+    "hotkey": "ALT + TAB",
+    "scope": "app"
+  },
+  "tokens": {
+    "radius": 12,
+    "density": 1.0,
+    "font": "sans",
+    "motion": "fast"
+  },
+  "hypr": {
+    "gapsIn": 8,
+    "gapsOut": 12,
+    "border": 1,
+    "rounding": 12,
+    "blur": true,
+    "shadow": false,
+    "floatByDefault": false,
+    "focusFollowsMouse": false,
+    "titlebarButtonsLeft": false
+  },
+  "keymap": "gnome"
+}
