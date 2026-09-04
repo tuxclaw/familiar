@@ -4,7 +4,7 @@
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
 **Branch:** `andy/m3-launcher` @ `693c24b`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (still M2 dock QML; do not sync until Tux click-proves launcher)
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (M3 Overlay + `ui/launcher` + `lib/Apps.js` copied 15:00 PDT; plugin reloaded). Click-prove pending.
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json extra:** `bar.dockEnabled=on`, `bar.dockAutohide=on`, `bar.dockPinned=chromium,org.gnome.Nautilus,obsidian`
@@ -15,7 +15,7 @@ M0 + **M1 complete**. **M2 dock live**. **M3 launcher in repo** @ `693c24b` — 
 
 Summon: `omarchy-shell shell summon io.github.tuxclaw.familiar '{"surface":"launcher"}'` or GNOME/Plasma **Applications**. Esc / Enter / arrows. Frecency `~/.local/state/familiar/frecency.json`. Commands after 2 chars from omarchy-menu.jsonc.
 
-**Next:** Tux click-prove launcher, then live-sync plugin QML. Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps. Click-outside-to-close is unproven (launcher Item fills overlay; Esc is wired).
+**Next:** Tux click-prove launcher (Applications or summon). Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps. Click-outside-to-close is unproven (Esc is wired).
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
