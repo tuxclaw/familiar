@@ -120,3 +120,11 @@
 **Files:** `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `tests/validate.sh`, `.context/history.md`, `.context/.active-agent`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. No shell/bar restart, live Omarchy plugin copy, or Hyprland/config write was performed.
 **Commit:** this commit (hash reported in handoff)
+
+## [2026-09-04] M3 launcher complete
+**Agent:** Tails (ACP codex) + Sonic review
+**Branch:** andy/m3-launcher @ 693c24b
+**Changes:** Replaced overlay launcher stub with profile styles (grid/kickoff/spotlight), SearchField focus, ranking/frecency in lib/Apps.js, Omarchy menu commands when query length >= 2, gtk-launch via uwsm-app. Dock/bar unchanged. No live plugin sync. No familiar.lua write.
+**Files:** Overlay.qml, README.md, tests/validate.sh, lib/Apps.js, ui/launcher/*
+**Validation:** tests/validate.sh, tests/hypr.sh, git diff --check passed.
+**Commit:** 693c24b Build M3 overlay launcher

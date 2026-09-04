@@ -3,17 +3,19 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m2-dock` @ `139f677`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced; git checkout may lag)
+**Branch:** `andy/m3-launcher` @ `693c24b`
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (still M2 dock QML; do not sync until Tux click-proves launcher)
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json extra:** `bar.dockEnabled=on`, `bar.dockAutohide=on`, `bar.dockPinned=chromium,org.gnome.Nautilus,obsidian`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
-M0 + **M1 complete** (bar clicks). **M2 dock live** — overlay `DockHost`, autohide, icons confirmed 14:42 (Obsidian/OpenClaw via `DesktopEntries.byId` + `heuristicLookup`). Hyprland writes still skipped.
+M0 + **M1 complete**. **M2 dock live**. **M3 launcher in repo** @ `693c24b` — not live-synced. `tests/validate.sh` + `tests/hypr.sh` + `git diff --check` pass. Hyprland writes still skipped.
 
-**Next session:** M3 launcher (`SPEC.md` M3). Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps.
+Summon: `omarchy-shell shell summon io.github.tuxclaw.familiar '{"surface":"launcher"}'` or GNOME/Plasma **Applications**. Esc / Enter / arrows. Frecency `~/.local/state/familiar/frecency.json`. Commands after 2 chars from omarchy-menu.jsonc.
+
+**Next:** Tux click-prove launcher, then live-sync plugin QML. Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps. Click-outside-to-close is unproven (launcher Item fills overlay; Esc is wired).
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
@@ -31,4 +33,4 @@ M0 + **M1 complete** (bar clicks). **M2 dock live** — overlay `DockHost`, auto
 Use ACP `agentId: "codex"`. Isolated auth lives in `~/.openclaw/acpx/codex-home/auth.json` (copy from `~/.codex`, never echo). `agents.entries.codex` + `main.subagents.allowAgents: [codex, grok]`. Do **not** use OpenClaw `openai/gpt-5.6-sol` for long QML — idle-timeouts.
 
 ## GitHub
-https://github.com/tuxclaw/omarchy-familiar (public). Current work branch `andy/m2-dock`. Account `tuxclaw`.
+https://github.com/tuxclaw/omarchy-familiar (public). Current work branch `andy/m3-launcher`. Account `tuxclaw`.
