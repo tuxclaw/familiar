@@ -112,3 +112,11 @@
 **Files:** `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `ui/dock/DockContextMenu.qml`, `tests/validate.sh`, `.context/history.md`, `.context/.active-agent`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, `git diff --check`, and the Loader `implicitHeight:` guard passed. No shell/bar restart, live Omarchy plugin copy, Hyprland write, or `applyHypr()` call was performed.
 **Commit:** this commit (hash reported in handoff)
+
+## [2026-09-04] M2 dock Obsidian icon fix complete
+**Agent:** Tails (Codex)
+**Branch:** andy/m2-dock
+**Changes:** Resolved pinned and running applications through `DesktopEntries.byId()` and `DesktopEntries.heuristicLookup()` before the compatibility scans, so Obsidian's `md.obsidian.Obsidian` app ID groups under its canonical desktop entry. Passed the owning `DockSurface` into icon delegates for pointer-driven magnification, delegated icon lookup to the shell `AppLibrary`, decoded icons at physical pixel size, and switched failed image loads to the executable fallback icon.
+**Files:** `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `tests/validate.sh`, `.context/history.md`, `.context/.active-agent`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. No shell/bar restart, live Omarchy plugin copy, or Hyprland/config write was performed.
+**Commit:** this commit (hash reported in handoff)

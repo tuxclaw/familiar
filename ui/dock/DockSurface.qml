@@ -26,6 +26,11 @@ Rectangle {
   function desktopEntry(id) {
     var rawTarget = String(id || "").trim()
     var target = normalize(rawTarget)
+    if (!target) return null
+    var indexed = DesktopEntries.byId(rawTarget) || DesktopEntries.byId(target)
+    if (indexed) return indexed
+    var heuristic = DesktopEntries.heuristicLookup(rawTarget) || DesktopEntries.heuristicLookup(target)
+    if (heuristic) return heuristic
     var foldedTarget = target.toLowerCase()
     var apps = DesktopEntries.applications.values || []
     for (var i = 0; i < apps.length; i++) {
@@ -124,6 +129,8 @@ Rectangle {
         required property var modelData
         required property int index
         entry: modelData
+        dockSurface: root
+        appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
         iconSize: root.iconSize
         magnifyScale: root.magnifyFor(index, this)
         indicatorStyle: root.runningIndicator
@@ -145,6 +152,8 @@ Rectangle {
         required property var modelData
         required property int index
         entry: modelData
+        dockSurface: root
+        appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
         iconSize: root.iconSize
         magnifyScale: root.magnifyFor(root.pinnedEntries.length + index, this)
         indicatorStyle: root.runningIndicator
