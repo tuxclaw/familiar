@@ -41,3 +41,9 @@
 **Decision:** Iteration 2 (hard stop after this). Use `qs.Ui.WidgetButton` (the working right-icon path) for Activities, Notifications, pips, app menu. Clock must be the live registry `omarchy.clock` BarWidget — bind `barWidgetRegistry.revision` so it reloads when the catalogue fills; do not leave ClockLabel as the visible GNOME clock. Size Loaders like stock ModuleSlot (`implicitWidth/Height` from item, `Layout.fillHeight: true`). Repo only; Sonic syncs live clone.
 **Alternatives considered:** More summon fallbacks on ClockLabel (handlers never fire).
 **Status:** Active
+
+## [2026-09-04] M1 load crash + ModuleSlot host
+**By:** Sonic
+**Context:** `a6acae9` assigned `implicitHeight` on Loader. Cold start 13:56: `BarSection.qml:83 implicitHeight is a read-only property` → Type unavailable → host `errorString` crash. Stock bar restored.
+**Decision:** Do not assign `implicitWidth`/`implicitHeight` on Loader. Host each bar item in a stock-style ModuleSlot: Item with width/height from child implicit size, Loader `anchors.fill`, covering MouseArea calling `bar.pressModuleClickTarget` (copy from `/usr/s…/Bar.qml`). Add those helpers on Familiar `Bar.qml`. Do not `omarchy bar use familiar` until Sonic verifies load. No hypr writes. No M2.
+**Status:** Active

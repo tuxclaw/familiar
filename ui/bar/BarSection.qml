@@ -11,7 +11,6 @@ Item {
   property int alignment: Qt.AlignLeft
 
   implicitWidth: row.implicitWidth
-  implicitHeight: row.implicitHeight
 
   function itemId(entry) {
     return typeof entry === "string" ? entry : String((entry && entry.id) || "")
@@ -52,8 +51,8 @@ Item {
     Repeater {
       model: root.items || []
 
-      Loader {
-        id: familiarLoader
+      Item {
+        id: familiarSlot
         required property var modelData
         readonly property string itemName: root.itemId(modelData)
         readonly property var stockClockComponent: {
@@ -77,26 +76,42 @@ Item {
           }
         }
 
-        active: componentForItem !== null
-        sourceComponent: componentForItem
-        implicitWidth: item && item.visible ? item.implicitWidth : 0
-        implicitHeight: item && item.visible ? item.implicitHeight : 0
+        readonly property var activeItem: familiarLoader.item
+
+        width: activeItem && activeItem.visible ? activeItem.implicitWidth : 0
+        height: root.bar.barSize
         Layout.fillHeight: true
-        Layout.preferredWidth: implicitWidth
+        Layout.preferredWidth: width
         Layout.fillWidth: itemName === "spacer"
 
-        onLoaded: {
-          if (!item) return
-          if ("bar" in item) item.bar = root.bar
-          if ("settings" in item) item.settings = hostsStockClock
-            ? root.clockSettings() : root.itemSettings(modelData)
-          if ("profileId" in item) item.profileId = String((root.bar.profile && root.bar.profile.id) || "")
-          if ("format" in item) item.format = root.bar.clockFormat
-          if ("fontFamily" in item) item.fontFamily = root.bar.fontFamily
-          if (hostsStockClock) root.bar.registerHostedItem(item)
+        Loader {
+          id: familiarLoader
+          active: familiarSlot.componentForItem !== null
+          sourceComponent: familiarSlot.componentForItem
+          anchors.fill: parent
+
+          onLoaded: {
+            if (!item) return
+            if ("bar" in item) item.bar = root.bar
+            if ("settings" in item) item.settings = familiarSlot.hostsStockClock
+              ? root.clockSettings() : root.itemSettings(familiarSlot.modelData)
+            if ("profileId" in item) item.profileId = String((root.bar.profile && root.bar.profile.id) || "")
+            if ("format" in item) item.format = root.bar.clockFormat
+            if ("fontFamily" in item) item.fontFamily = root.bar.fontFamily
+            if (familiarSlot.hostsStockClock) root.bar.registerHostedItem(item)
+          }
         }
 
-        Component.onDestruction: if (hostsStockClock && item) root.bar.unregisterHostedItem(item)
+        MouseArea {
+          anchors.fill: parent
+          acceptedButtons: Qt.AllButtons
+          propagateComposedEvents: true
+          onClicked: function(mouse) {
+            if (!root.bar.pressModuleClickTarget(familiarSlot, mouse.button, mouse.x, mouse.y)) mouse.accepted = false
+          }
+        }
+
+        Component.onDestruction: if (hostsStockClock && activeItem) root.bar.unregisterHostedItem(activeItem)
       }
     }
 
@@ -130,8 +145,8 @@ Item {
       Repeater {
         model: stockRow.entries
 
-        Loader {
-          id: stockLoader
+        Item {
+          id: stockSlot
           required property var modelData
           readonly property string widgetId: typeof modelData === "string"
             ? modelData : String((modelData && modelData.id) || "")
@@ -142,21 +157,37 @@ Item {
             return w[widgetId] ? w[widgetId].component : null
           }
 
-          active: comp !== null
-          sourceComponent: comp
-          implicitWidth: item && item.visible ? item.implicitWidth : 0
-          implicitHeight: item && item.visible ? item.implicitHeight : 0
-          Layout.fillHeight: true
-          Layout.preferredWidth: implicitWidth
+          readonly property var activeItem: stockLoader.item
 
-          onLoaded: {
-            if (!item) return
-            if ("bar" in item) item.bar = root.bar
-            if ("settings" in item) item.settings = settingsValue
-            root.bar.registerHostedItem(item)
+          width: activeItem && activeItem.visible ? activeItem.implicitWidth : 0
+          height: root.bar.barSize
+          Layout.fillHeight: true
+          Layout.preferredWidth: width
+
+          Loader {
+            id: stockLoader
+            active: stockSlot.comp !== null
+            sourceComponent: stockSlot.comp
+            anchors.fill: parent
+
+            onLoaded: {
+              if (!item) return
+              if ("bar" in item) item.bar = root.bar
+              if ("settings" in item) item.settings = stockSlot.settingsValue
+              root.bar.registerHostedItem(item)
+            }
           }
 
-          Component.onDestruction: if (item) root.bar.unregisterHostedItem(item)
+          MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            propagateComposedEvents: true
+            onClicked: function(mouse) {
+              if (!root.bar.pressModuleClickTarget(stockSlot, mouse.button, mouse.x, mouse.y)) mouse.accepted = false
+            }
+          }
+
+          Component.onDestruction: if (activeItem) root.bar.unregisterHostedItem(activeItem)
         }
       }
     }

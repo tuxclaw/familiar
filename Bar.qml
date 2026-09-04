@@ -49,6 +49,46 @@ Item {
     clickTargets = clickTargets.filter(function(item) { return item !== target })
   }
 
+  function moduleTargetClickable(target) {
+    return target
+      && target.visible !== false
+      && target.opacity !== 0
+      && target.interactive !== false
+      && target.pressable !== false
+      && target.concealed !== true
+      && typeof target.triggerPress === "function"
+  }
+
+  function moduleClickTargetAt(slot, localX, localY) {
+    for (var i = clickTargets.length - 1; i >= 0; i--) {
+      var target = clickTargets[i]
+      if (!moduleTargetClickable(target)) continue
+
+      var targetPoint = { x: localX, y: localY }
+      try {
+        targetPoint = slot.mapToItem(target, localX, localY)
+      } catch (e) {
+        continue
+      }
+
+      if (targetPoint.x >= 0 && targetPoint.x <= target.width &&
+          targetPoint.y >= 0 && targetPoint.y <= target.height) {
+        return target
+      }
+    }
+
+    if (moduleTargetClickable(slot.activeItem)) return slot.activeItem
+    return null
+  }
+
+  function pressModuleClickTarget(slot, button, localX, localY) {
+    var target = moduleClickTargetAt(slot, localX, localY)
+    if (!target) return false
+
+    target.triggerPress(button)
+    return true
+  }
+
   function run(command) {
     if (!command) return
     Util.execDetached(command)

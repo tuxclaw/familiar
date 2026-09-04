@@ -18,3 +18,14 @@
 - `isEnabled(familiar)` is true when `bar.id` is Familiar even with `plugins: []` — overlay/service should still load.
 - Live clone: `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (separate git checkout). Repo edits do not apply until synced.
 - Revert bar: `omarchy bar use omarchy.bar`.
+
+## [2026-09-04] Sonic — official click/host docs (not guesses)
+Sources: `https://omarchy.org/manual/shell-plugins/`, `https://omarchy.org/manual/the-top-bar/`, `/usr/share/omarchy/shell/README.md`, `/usr/share/omarchy/shell/plugins/bar/README.md`, `/usr/share/omarchy/shell/plugins/bar/Bar.qml`, Quickshell QsWindow/PanelWindow (`https://quickshell.org/docs/v0.2.1/types/Quickshell/QsWindow/`).
+- Omarchy: "the source is the documentation." Full `kind: bar` replaces `omarchy.bar`. Widgets inside the stock bar are `bar-widget`s loaded into **ModuleSlot**.
+- Stock click path (Bar.qml): WidgetButton `registerClickTarget` + slot `MouseArea` `pressModuleClickTarget` → `triggerPress`. Custom QML module example in bar/README.md: Item with **explicit** `implicitWidth`/`implicitHeight: bar.barSize` and `MouseArea anchors.fill`.
+- Host injects bar props after create (`configureBar`); plugin bar Loader is `asynchronous: true`. No `required` on those props.
+- `bar` must expose: foreground/background/urgent, fontFamily, position, vertical, barSize, run, shellQuote, showTooltip/hideTooltip, requestPopout/releasePopout.
+- QsWindow.mask default null = full window clickable. Non-null mask is the clickthrough region. Familiar bar does not set mask.
+- Plugin QML under `~/.config/omarchy/plugins/` is watched with `inotifywait -r close_write,create,delete,move` → `reloadPlugins()`. Hard apply: `omarchy restart shell`.
+- Tux 13:52: left/center still dead after WidgetButton pass. Right stock icons still work. Next change must copy stock ModuleSlot click delivery, not more summon fallbacks.
+- 13:56 restart: bar gone. Log: `BarSection.qml:83 Invalid property assignment: implicitHeight is a read-only property` → `Type BarSection unavailable` → host `@shell.qml errorString is not defined` (no fallback). Reverted `omarchy bar use omarchy.bar` + restart 13:57. Stock `omarchy-bar` layer back on DP-1/DP-2.

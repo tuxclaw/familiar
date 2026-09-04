@@ -63,4 +63,18 @@
 **Changes:** Confirmed from Tux's live proof that the injected Familiar bar painted all controls, while only stock right-side widgets accepted clicks. Replaced Activities, Notifications, workspace pips, and AppMenu custom MouseAreas with `qs.Ui.WidgetButton`; made the clock resolve and host only registry `omarchy.clock` with a `barWidgetRegistry.revision` dependency; and gave both Familiar and stock loaders stock-style implicit sizing and layout hints.
 **Files:** `.context/decisions.md`, `.context/history.md`, `ui/bar/ActivitiesButton.qml`, `ui/bar/AppMenuButton.qml`, `ui/bar/BarSection.qml`, `ui/bar/NotificationsIndicator.qml`, `ui/bar/WorkspacePips.qml`, `tests/validate.sh`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. QML lint retained its warning-only output and returned success. No live plugin, shell configuration, or Hyprland configuration was changed.
-**Commit:** `Fix M1 bar click targets`
+**Commit:** `Fix M1 bar click targets` (`a6acae9`; Sonic committed). Handoff `51e03da`. Cold start then failed: Loader implicitHeight read-only. Stock bar restored.
+
+## [2026-09-04] M1 ModuleSlot host start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/m1-bars
+**Changes:** Fix load crash; copy stock ModuleSlot click host. Do not enable live.
+**Commit:** pending Tails
+
+## [2026-09-04] M1 ModuleSlot host complete
+**Agent:** Tails (ACP codex)
+**Branch:** andy/m1-bars
+**Changes:** Removed Loader implicit-size assignments, wrapped Familiar and stock bar items in explicit stock-style slots, forwarded slot clicks through the registered WidgetButton targets, and copied the stock click-target resolution helpers into Familiar's bar host. Added regression assertions for both slot paths and the forbidden `implicitHeight:` assignment.
+**Files:** `.context/.active-agent`, `.context/decisions.md`, `.context/history.md`, `.context/notes.md`, `Bar.qml`, `tests/validate.sh`, `ui/bar/BarSection.qml`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, `grep -F 'implicitHeight:' ui/bar/BarSection.qml` (no match), and `git diff --check` passed. The live bar, shell, Hyprland config, and installed plugin clone were not touched.
+**Commit:** `Repair bar module slot hosting`

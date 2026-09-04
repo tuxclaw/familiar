@@ -22,8 +22,14 @@ assert_contains ui/bar/WorkspacePips.qml 'Util.shellQuote('\''hl.dsp.focus({ wor
 assert_contains ui/bar/BarSection.qml 'root.registryComponent("omarchy.clock")'
 assert_contains ui/bar/BarSection.qml 'barWidgetRegistry.revision'
 assert_contains ui/bar/BarSection.qml 'case "clock": return stockClockComponent'
-assert_contains ui/bar/BarSection.qml 'if (hostsStockClock) root.bar.registerHostedItem(item)'
-assert_contains ui/bar/BarSection.qml 'Layout.preferredWidth: implicitWidth'
+assert_contains ui/bar/BarSection.qml 'if (familiarSlot.hostsStockClock) root.bar.registerHostedItem(item)'
+assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(familiarSlot, mouse.button, mouse.x, mouse.y)'
+assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(stockSlot, mouse.button, mouse.x, mouse.y)'
+assert_contains ui/bar/BarSection.qml 'anchors.fill: parent'
+if grep -Fq -- 'implicitHeight:' "$ROOT/ui/bar/BarSection.qml"; then
+  printf 'Loader sizing regression in ui/bar/BarSection.qml: implicitHeight assignment found\n' >&2
+  exit 1
+fi
 assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
