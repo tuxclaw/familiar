@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
+import "ui/dock"
 
 Item {
   id: root
@@ -14,6 +15,8 @@ Item {
   property string surface: "launcher"
   property bool opened: false
   property var payload: ({})
+  readonly property var profile: service ? service.currentProfile : ({})
+  readonly property var dockProfile: profile.dock || ({})
 
   function setProfile(profileId) {
     return service ? service.setProfile(profileId) : "unknown"
@@ -58,6 +61,24 @@ Item {
 
   function toggle(payloadJson) {
     return opened ? close() : open(payloadJson)
+  }
+
+  DockHost {
+    service: root.service
+    enabled: root.service
+      ? root.service.resolved("dockEnabled", root.dockProfile.enabled ? "on" : "off") !== "off"
+      : false
+    position: root.service ? root.service.resolved("dockPosition", root.dockProfile.position || "bottom") : "bottom"
+    iconSize: root.service ? Number(root.service.resolved("dockIconSize", root.dockProfile.iconSize || 48)) : 48
+    magnification: root.service
+      ? root.service.resolved("dockMagnification", root.dockProfile.magnification ? "on" : "off") === "on"
+      : false
+    autohide: root.service
+      ? root.service.resolved("dockAutohide", root.dockProfile.autohide ? "on" : "off") === "on"
+      : false
+    pinned: root.service ? root.service.pinnedApps() : []
+    runningIndicator: root.dockProfile.runningIndicator || "dot"
+    showRunning: root.dockProfile.showRunning !== false
   }
 
   PanelWindow {

@@ -69,6 +69,28 @@ Item {
     return value === undefined || value === "auto" ? profileValue : value
   }
 
+  function pinnedApps() {
+    var configured = barConfig.dockPinned
+    if (typeof configured === "string") {
+      return configured.split(",").map(function(id) { return id.trim() })
+        .filter(function(id) { return id.length > 0 })
+    }
+    var dock = currentProfile.dock || ({})
+    return Array.isArray(dock.pinned) ? dock.pinned.slice() : []
+  }
+
+  function persistPinned(list) {
+    var pins = Array.isArray(list) ? list.map(function(id) { return String(id).trim() })
+      .filter(function(id) { return id.length > 0 }) : []
+    if (!pluginRegistry || typeof pluginRegistry.shellConfigMutator !== "function")
+      return "unavailable"
+    pluginRegistry.shellConfigMutator(function(config) {
+      if (!config.bar) config.bar = {}
+      config.bar.dockPinned = pins.join(",")
+    })
+    return "ok"
+  }
+
   function persist(profileId) {
     if (pluginRegistry && typeof pluginRegistry.shellConfigMutator === "function") {
       pluginRegistry.shellConfigMutator(function(config) {

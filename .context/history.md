@@ -84,3 +84,17 @@
 **Branch:** andy/m1-bars @ 24d910a
 **Changes:** Tux confirmed Activities, clock, Notifications, pips, and right stock icons all work.
 **Commit:** none (proof only)
+
+## [2026-09-04] M2 dock start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/m2-dock (from andy/m1-bars @ a96bf14)
+**Changes:** Dispatch DockHost in overlay per SPEC §5.4/§7. No live hypr/bar switch in builder.
+**Commit:** pending Tails
+
+## [2026-09-04] M2 overlay dock complete
+**Agent:** Tails (ACP codex)
+**Branch:** requested `andy/m2-dock`; git metadata write was denied by the managed workspace, so the worktree remains on `andy/m1-bars`
+**Changes:** Added the overlay-owned per-screen DockHost and dock kit, desktop-entry pin resolution, running-app grouping, focus-or-launch behavior, safe toplevel close requests, pin persistence, context actions, profile running indicators, Gaussian macOS magnification, and delayed autohide. Wired DockHost into the keep-loaded Overlay without changing its IPC/overview stub or enabling a panel kind.
+**Files:** `Overlay.qml`, `Service.qml`, `ui/dock/DockHost.qml`, `ui/dock/DockSurface.qml`, `ui/dock/DockIcon.qml`, `ui/dock/DockSeparator.qml`, `ui/dock/RunningIndicator.qml`, `ui/dock/DockContextMenu.qml`, `tests/validate.sh`, `.context/decisions.md`, `.context/history.md`, `.context/.active-agent`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. No live plugin, shell, Omarchy config, or Hyprland config was touched; `applyHypr()` remains skipped/refused.
+**Commit:** pending (`Build M2 overlay dock`); branch/commit permission was denied twice

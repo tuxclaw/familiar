@@ -47,3 +47,9 @@
 **Context:** `a6acae9` assigned `implicitHeight` on Loader. Cold start 13:56: `BarSection.qml:83 implicitHeight is a read-only property` → Type unavailable → host `errorString` crash. Stock bar restored.
 **Decision:** Do not assign `implicitWidth`/`implicitHeight` on Loader. Host each bar item in a stock-style ModuleSlot: Item with width/height from child implicit size, Loader `anchors.fill`, covering MouseArea calling `bar.pressModuleClickTarget` (copy from `/usr/s…/Bar.qml`). Add those helpers on Familiar `Bar.qml`. Do not `omarchy bar use familiar` until Sonic verifies load. No hypr writes. No M2.
 **Status:** Active
+
+## [2026-09-04] M2 dock — overlay child, no Hyprland writes
+**By:** Sonic
+**Context:** Tux 14:09: M1 proven, go on M2.
+**Decision:** Dock is Overlay-owned `ui/dock/DockHost.qml`, never `kind: panel`. GNOME/Plasma dock off; macOS on. App launch = Omarchy `uwsm-app -- gtk-launch <id>.desktop`. `Service.applyHypr` stays skipped. No Loader `implicitHeight` assignments. Branch `andy/m2-dock` from current `andy/m1-bars`. Builder does not touch live bar/shell/hypr.
+**Status:** Active

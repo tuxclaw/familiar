@@ -18,6 +18,7 @@ assert_contains() {
 
 assert_contains Bar.qml 'exclusionMode: ExclusionMode.Auto'
 assert_contains Bar.qml 'surfaceFormat.opaque: false'
+assert_contains Overlay.qml 'DockHost {'
 assert_contains ui/bar/WorkspacePips.qml 'Util.shellQuote('\''hl.dsp.focus({ workspace = "'\'''
 assert_contains ui/bar/BarSection.qml 'root.registryComponent("omarchy.clock")'
 assert_contains ui/bar/BarSection.qml 'barWidgetRegistry.revision'
