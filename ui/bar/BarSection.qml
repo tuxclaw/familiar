@@ -56,8 +56,10 @@ Item {
         id: familiarLoader
         required property var modelData
         readonly property string itemName: root.itemId(modelData)
-        readonly property var stockClockComponent: itemName === "clock"
-          ? root.registryComponent("omarchy.clock") : null
+        readonly property var stockClockComponent: {
+          var revision = root.bar.barWidgetRegistry.revision
+          return itemName === "clock" ? root.registryComponent("omarchy.clock") : null
+        }
         readonly property bool hostsStockClock: itemName === "clock" && stockClockComponent !== null
         readonly property var componentForItem: {
           switch (itemName) {
@@ -68,7 +70,7 @@ Item {
           case "tray": return trayComponent
           case "workspaces": return workspacesComponent
           case "notifications": return notificationsComponent
-          case "clock": return stockClockComponent || clockComponent
+          case "clock": return stockClockComponent
           case "spacer": return spacerComponent
           case "omarchyWidgets": return stockWidgetsComponent
           default: return null
@@ -77,6 +79,10 @@ Item {
 
         active: componentForItem !== null
         sourceComponent: componentForItem
+        implicitWidth: item && item.visible ? item.implicitWidth : 0
+        implicitHeight: item && item.visible ? item.implicitHeight : 0
+        Layout.fillHeight: true
+        Layout.preferredWidth: implicitWidth
         Layout.fillWidth: itemName === "spacer"
 
         onLoaded: {
@@ -107,7 +113,6 @@ Item {
   Component { id: trayComponent; TrayArea {} }
   Component { id: workspacesComponent; WorkspacePips {} }
   Component { id: notificationsComponent; NotificationsIndicator {} }
-  Component { id: clockComponent; ClockLabel {} }
   Component { id: spacerComponent; Item { Layout.fillWidth: true } }
 
   Component {
@@ -132,12 +137,17 @@ Item {
             ? modelData : String((modelData && modelData.id) || "")
           readonly property var settingsValue: modelData
           readonly property var comp: {
+            var revision = root.bar.barWidgetRegistry.revision
             var w = root.bar.barWidgetRegistry.widgets
             return w[widgetId] ? w[widgetId].component : null
           }
 
           active: comp !== null
           sourceComponent: comp
+          implicitWidth: item && item.visible ? item.implicitWidth : 0
+          implicitHeight: item && item.visible ? item.implicitHeight : 0
+          Layout.fillHeight: true
+          Layout.preferredWidth: implicitWidth
 
           onLoaded: {
             if (!item) return

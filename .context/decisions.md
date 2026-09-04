@@ -34,3 +34,10 @@
 - Builders write only in the git repo. Sonic syncs the live plugin clone after verify.
 **Alternatives considered:** Custom ClockLabel summon fallback (already failed); classic `hyprctl dispatch workspace N` (HANDOFF was wrong vs live stock widget).
 **Status:** Active
+
+## [2026-09-04] M1 click iteration 2 — WidgetButton, not MouseArea-on-Text
+**By:** Sonic
+**Context:** Tux 13:44 PDT: only right-side stock icons work. Activities, date, time, Notifications dead. That proves Familiar `bar` + registry + KeyboardPanel popouts work. Dead items are custom `MouseArea` on `Text`/`Item` (ClockLabel fallback, Activities, Notifications).
+**Decision:** Iteration 2 (hard stop after this). Use `qs.Ui.WidgetButton` (the working right-icon path) for Activities, Notifications, pips, app menu. Clock must be the live registry `omarchy.clock` BarWidget — bind `barWidgetRegistry.revision` so it reloads when the catalogue fills; do not leave ClockLabel as the visible GNOME clock. Size Loaders like stock ModuleSlot (`implicitWidth/Height` from item, `Layout.fillHeight: true`). Repo only; Sonic syncs live clone.
+**Alternatives considered:** More summon fallbacks on ClockLabel (handlers never fire).
+**Status:** Active

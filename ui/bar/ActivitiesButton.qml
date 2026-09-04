@@ -1,31 +1,16 @@
 import QtQuick
 import qs.Commons
+import qs.Ui
 
-Item {
+WidgetButton {
   id: root
-  property var bar: null
-  implicitWidth: label.implicitWidth + Style.spacing.lg * 2
-  implicitHeight: Math.max(label.implicitHeight, 24)
-
-  function openOverview() {
+  text: "Activities"
+  fontFamily: bar ? bar.fontFamily : Style.font.family
+  fontSize: Style.font.body
+  foreground: Color.bar.text
+  onPressed: function() {
     if (!root.bar || !root.bar.shell || !root.bar.manifest
         || typeof root.bar.shell.summon !== "function") return
     root.bar.shell.summon(root.bar.manifest.id, '{"surface":"overview"}')
-  }
-
-  Text {
-    id: label
-    anchors.centerIn: parent
-    text: "Activities"
-    color: Color.bar.text
-    font.family: root.bar ? root.bar.fontFamily : Style.font.family
-    font.pixelSize: Style.font.body
-    font.weight: Font.DemiBold
-  }
-
-  MouseArea {
-    anchors.fill: parent
-    cursorShape: Qt.PointingHandCursor
-    onClicked: root.openOverview()
   }
 }

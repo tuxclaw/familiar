@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Hyprland
 import qs.Commons
+import qs.Ui
 
 RowLayout {
   id: root
@@ -21,26 +22,22 @@ RowLayout {
   Repeater {
     model: root.displayedWorkspaces
 
-    Rectangle {
+    WidgetButton {
       id: pip
       required property var modelData
       required property int index
       readonly property int workspaceId: Number(modelData)
       readonly property bool focused: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === workspaceId
-      width: focused ? 18 : 16
-      height: 16
-      radius: height / 2
-      color: focused ? Color.bar.active : Color.bar.text
+      bar: root.bar
+      text: "●"
+      foreground: focused ? Color.bar.active : Color.bar.text
       opacity: focused ? 1 : 0.55
-
-      MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-          if (!root.bar || typeof root.bar.run !== "function")
-            return
-          root.bar.run("hyprctl dispatch " + Util.shellQuote('hl.dsp.focus({ workspace = "' + pip.workspaceId + '" })'))
-        }
+      horizontalMargin: focused ? 6 : 5
+      verticalPadding: 0
+      fixedHeight: root.bar ? root.bar.barSize : 16
+      onPressed: function() {
+        if (!root.bar || typeof root.bar.run !== "function") return
+        root.bar.run("hyprctl dispatch " + Util.shellQuote('hl.dsp.focus({ workspace = "' + pip.workspaceId + '" })'))
       }
     }
   }

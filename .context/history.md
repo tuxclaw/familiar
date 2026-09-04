@@ -55,4 +55,12 @@
 **Files:** `Bar.qml`, `Overlay.qml`, `ui/bar/ActivitiesButton.qml`, `ui/bar/BarSection.qml`, `ui/bar/NotificationsIndicator.qml`, `ui/bar/WorkspacePips.qml`, `tests/validate.sh`, `.context/decisions.md`, `.context/notes.md`, `.context/history.md`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, `git diff --check`, and generated Lua syntax checks passed. QML lint produced its existing warning-only output and no errors. No live plugin, shell configuration, or Hyprland configuration was changed.
 **Assumptions:** The installed Omarchy 4.0.2 registry exposes `omarchy.clock` as observed under `/usr/share/omarchy/shell`; Sonic will sync this commit to the separate live clone and perform pointer-level verification.
-**Commit:** `Finish M1 bar click contracts`
+**Commit:** `Finish M1 bar click contracts` (`15819f3`; Sonic committed after Tails left the tree dirty). Handoff `a7a8f60`.
+
+## [2026-09-04] M1 click iteration 2 start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/m1-bars
+**Changes:** Confirmed from Tux's live proof that the injected Familiar bar painted all controls, while only stock right-side widgets accepted clicks. Replaced Activities, Notifications, workspace pips, and AppMenu custom MouseAreas with `qs.Ui.WidgetButton`; made the clock resolve and host only registry `omarchy.clock` with a `barWidgetRegistry.revision` dependency; and gave both Familiar and stock loaders stock-style implicit sizing and layout hints.
+**Files:** `.context/decisions.md`, `.context/history.md`, `ui/bar/ActivitiesButton.qml`, `ui/bar/AppMenuButton.qml`, `ui/bar/BarSection.qml`, `ui/bar/NotificationsIndicator.qml`, `ui/bar/WorkspacePips.qml`, `tests/validate.sh`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, and `git diff --check` passed. QML lint retained its warning-only output and returned success. No live plugin, shell configuration, or Hyprland configuration was changed.
+**Commit:** `Fix M1 bar click targets`
