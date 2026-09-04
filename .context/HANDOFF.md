@@ -3,15 +3,16 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m1-bars` @ `24d910a`
+**Branch:** `andy/m1-bars` @ `24d910a` (handoff `4ebaede`)
 **Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (QML synced; git checkout may lag)
-**Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`) — re-enabled 14:04 after ModuleSlot load fix
+**Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
 
 ## Status
-M0 + M1 bars in. Plugin **enabled**. GNOME look OK.
-Click iteration 2 `a6acae9`: left/center use `qs.Ui.WidgetButton` (same path as working right icons); clock is registry `omarchy.clock` only. **Awaiting Tux pointer proof** (Activities, clock calendar, Notifications, pips). No M2 until confirmed.
+M0 + **M1 complete**. Plugin enabled. Tux 14:06 PDT: Activities, clock calendar, Notifications, pips, and right-side stock icons all work.
+Host: stock-style ModuleSlots + `pressModuleClickTarget` (`24d910a`). Never assign Loader `implicitHeight` (read-only; cold-start crash). Host fallback `errorString` is still broken in Omarchy `shell.qml` — Familiar must load or the bar vanishes.
+Next: M2 dock when Tux says go. Do not write `~/.config/hypr/familiar.lua` until keybinds/gaps.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).

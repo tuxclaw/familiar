@@ -77,4 +77,10 @@
 **Changes:** Removed Loader implicit-size assignments, wrapped Familiar and stock bar items in explicit stock-style slots, forwarded slot clicks through the registered WidgetButton targets, and copied the stock click-target resolution helpers into Familiar's bar host. Added regression assertions for both slot paths and the forbidden `implicitHeight:` assignment.
 **Files:** `.context/.active-agent`, `.context/decisions.md`, `.context/history.md`, `.context/notes.md`, `Bar.qml`, `tests/validate.sh`, `ui/bar/BarSection.qml`
 **Validation:** `tests/validate.sh`, `tests/hypr.sh`, `grep -F 'implicitHeight:' ui/bar/BarSection.qml` (no match), and `git diff --check` passed. The live bar, shell, Hyprland config, and installed plugin clone were not touched.
-**Commit:** `Repair bar module slot hosting`
+**Commit:** `Repair bar module slot hosting` (`24d910a`; Sonic committed). Re-enabled live; `familiar-bar` 32px both monitors.
+
+## [2026-09-04] M1 complete
+**Agent:** Sonic
+**Branch:** andy/m1-bars @ 24d910a
+**Changes:** Tux confirmed Activities, clock, Notifications, pips, and right stock icons all work.
+**Commit:** none (proof only)
