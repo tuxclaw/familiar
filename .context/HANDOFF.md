@@ -3,8 +3,8 @@
 **Project:** `/home/tux/Documents/Projects/omarchy-familiar`
 **Plugin id:** `io.github.tuxclaw.familiar`
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `andy/m3-launcher` @ `cd2e31c`
-**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (M3 launcher + dock Applications tile live). Tux 15:16 PDT: launcher/dock tile working.
+**Branch:** `andy/m4-overview` @ `6ee63c6`
+**Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar`
 **Active bar:** Familiar GNOME profile (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert:** `omarchy bar use omarchy.bar`
 **shell.json extra:** `bar.dockEnabled=on`, `bar.dockAutohide=on`, `bar.dockPinned=chromium,org.gnome.Nautilus,obsidian`
@@ -15,7 +15,7 @@ M0 + **M1 complete**. **M2 dock live**. **M3 launcher complete** (Tux 15:16 PDT)
 
 Hot-reload lesson: new dock tiles may not mount until `omarchy restart shell` (Lua dispatch `hl.dsp.exec_cmd("omarchy-launch-shell")`). Do not spawn multiple shells.
 
-**Next:** M4 overview + switcher (`SPEC.md` M4). Do not write `~/.config/hypr/familiar.lua` until Tux wants keybinds/gaps.
+**M4:** `6ee63c6`. Tux 15:27 PDT: README, push, live-sync, familiar.lua. GNOME profile rebinds Super-tap, Super+A, Alt+Tab, Super+S (was scratchpad).
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel` (summon prefers panel).
