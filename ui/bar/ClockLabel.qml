@@ -21,6 +21,23 @@ Text {
     acceptedButtons: Qt.LeftButton
     cursorShape: Qt.PointingHandCursor
     onClicked: {
+      if (root.bar && typeof root.bar.summonBarWidget === "function") {
+        try {
+          if (root.bar.summonBarWidget("omarchy.clock") !== false)
+            return
+        } catch (error) {
+          console.warn("Could not summon clock bar widget:", error)
+        }
+      }
+
+      if (root.bar && typeof root.bar.hostedBarWidget === "function") {
+        var hostedItem = root.bar.hostedBarWidget("omarchy.clock", "togglePanel", false)
+        if (hostedItem) {
+          hostedItem.togglePanel()
+          return
+        }
+      }
+
       if (root.bar && root.bar.shell && typeof root.bar.shell.summon === "function")
         root.bar.shell.summon("omarchy.clock")
     }

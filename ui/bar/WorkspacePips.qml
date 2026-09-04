@@ -29,7 +29,14 @@ RowLayout {
       MouseArea {
         anchors.fill: parent
         cursorShape: pip.modelData ? Qt.PointingHandCursor : Qt.ArrowCursor
-        onClicked: if (pip.modelData && typeof pip.modelData.activate === "function") pip.modelData.activate()
+        onClicked: {
+          if (!pip.modelData)
+            return
+
+          const workspace = pip.modelData.id ?? pip.modelData.name
+          if (workspace !== undefined && workspace !== null)
+            Hyprland.dispatch("workspace " + workspace)
+        }
       }
     }
   }
