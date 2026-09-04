@@ -72,6 +72,8 @@ Item {
     }
     color: "transparent"
     exclusiveZone: 0
+    exclusionMode: ExclusionMode.Ignore
+    surfaceFormat.opaque: false
 
     WlrLayershell.namespace: "familiar-overlay"
     WlrLayershell.layer: WlrLayer.Overlay

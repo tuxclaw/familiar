@@ -29,9 +29,12 @@ Item {
 
   function clockSettings() {
     var layout = bar && bar.barConfig && bar.barConfig.layout
-    var entries = layout && Array.isArray(layout.center) ? layout.center : []
-    for (var i = 0; i < entries.length; i++) {
-      if (itemId(entries[i]) === "omarchy.clock") return entries[i]
+    var roles = ["left", "center", "right"]
+    for (var r = 0; layout && r < roles.length; r++) {
+      var entries = Array.isArray(layout[roles[r]]) ? layout[roles[r]] : []
+      for (var i = 0; i < entries.length; i++) {
+        if (itemId(entries[i]) === "omarchy.clock") return entries[i]
+      }
     }
     return ({ id: "omarchy.clock" })
   }

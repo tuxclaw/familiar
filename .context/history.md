@@ -40,3 +40,19 @@
 **Changes:** Replaced the clock-only surface with GNOME, Plasma, and macOS profile-driven left/center/right sections; added activities, app menu, active-app, grouped task, tray, workspace, notification, clock, spacer, and stock Omarchy-widget hosts; added stock-panel navigation and expanded QML validation to every plugin QML file.
 **Validation:** `omarchy plugin validate .`, `tests/validate.sh`, `tests/hypr.sh`, generated-profile `luac -p`, and `git diff --check` passed. No plugin enablement or live Hyprland/config writes were performed.
 **Commit:** `Build profile-driven Familiar bars` (this commit)
+
+## [2026-09-04] M1 click-complete start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/m1-bars
+**Changes:** Tux asked to finish M1 before M2. Seeding click-complete dispatch. Live bar enabled; clicks unproven. Stock workspace dispatcher is `hl.dsp.focus`, not `workspace N`.
+**Files:** `.context/decisions.md`, `.context/notes.md`
+**Commit:** pending Tails
+
+## [2026-09-04] M1 bar clicks completed
+**Agent:** Tails
+**Branch:** andy/m1-bars
+**Changes:** Matched workspace focus to the stock Lua dispatcher; made the stock `omarchy.clock` registry widget the primary clock path with settings discovered in any bar section; routed notifications through the first-party service and Activities through Familiar's overlay summon; matched stock layer-shell input and transparent-surface settings; added validation assertions for the click contracts.
+**Files:** `Bar.qml`, `Overlay.qml`, `ui/bar/ActivitiesButton.qml`, `ui/bar/BarSection.qml`, `ui/bar/NotificationsIndicator.qml`, `ui/bar/WorkspacePips.qml`, `tests/validate.sh`, `.context/decisions.md`, `.context/notes.md`, `.context/history.md`
+**Validation:** `tests/validate.sh`, `tests/hypr.sh`, `git diff --check`, and generated Lua syntax checks passed. QML lint produced its existing warning-only output and no errors. No live plugin, shell configuration, or Hyprland configuration was changed.
+**Assumptions:** The installed Omarchy 4.0.2 registry exposes `omarchy.clock` as observed under `/usr/share/omarchy/shell`; Sonic will sync this commit to the separate live clone and perform pointer-level verification.
+**Commit:** `Finish M1 bar click contracts`

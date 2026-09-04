@@ -11,3 +11,10 @@
 - Lua APIs: `hl.config`, `hl.curve`, `hl.animation`, `hl.layer_rule`, `hl.unbind`, `o.bind("SUPER + SPACE", label, cmd, opts)`, `o.window`, `{ release = true }`. No `bindr`. Key form `"SUPER + SPACE"`.
 - Stock `"SUPER + SPACE"` is Omarchy menu; Mac profile must `hl.unbind` first. Menu stays on `SUPER + ALT + SPACE`.
 - Disable path (later): `familiar.lua` becomes a loadable no-op so `require("hypr.familiar")` never 404s.
+
+## [2026-09-04] Sonic — M1 click gotchas
+- Stock workspace click: `/usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml` `focusWorkspace()` runs `bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"" + id + "\" })"))`.
+- Stock clock is `BarWidget` + nested `Panel.qml` (`KeyboardPanel`). WidgetButton has its own MouseArea; it also `registerClickTarget`s on the bar.
+- `isEnabled(familiar)` is true when `bar.id` is Familiar even with `plugins: []` — overlay/service should still load.
+- Live clone: `~/.config/omarchy/plugins/io.github.tuxclaw.familiar` (separate git checkout). Repo edits do not apply until synced.
+- Revert bar: `omarchy bar use omarchy.bar`.

@@ -39,7 +39,7 @@ RowLayout {
         onClicked: {
           if (!root.bar || typeof root.bar.run !== "function")
             return
-          root.bar.run("hyprctl dispatch workspace " + pip.workspaceId)
+          root.bar.run("hyprctl dispatch " + Util.shellQuote('hl.dsp.focus({ workspace = "' + pip.workspaceId + '" })'))
         }
       }
     }

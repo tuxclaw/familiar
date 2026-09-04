@@ -51,7 +51,7 @@ Item {
 
   function run(command) {
     if (!command) return
-    Quickshell.execDetached(["bash", "-lc", command])
+    Util.execDetached(command)
   }
 
   function hostedBarWidget(pluginId, methodName, openedOnly) {
@@ -151,7 +151,9 @@ Item {
       anchors.right: true
       implicitHeight: root.barSize
       exclusiveZone: root.profileBar.reserve === false ? 0 : implicitHeight
+      exclusionMode: ExclusionMode.Auto
       color: "transparent"
+      surfaceFormat.opaque: false
 
       WlrLayershell.namespace: "familiar-bar"
       WlrLayershell.layer: WlrLayer.Top

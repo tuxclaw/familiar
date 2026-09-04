@@ -20,3 +20,17 @@
 **Context:** Scaffolding must not change Tux's running Hyprland/bar until validate is clean and Tux says enable.
 **Decision:** Tails writes only inside this repo. Do not write `~/.config/hypr/familiar.lua`, do not edit `hyprland.lua`, do not `omarchy plugin add/enable`. `tests/hypr.sh` concatenates Lua into `tests/out/` only.
 **Status:** Active
+
+## [2026-09-04] M1 complete = live clicks, not just layout
+**By:** Sonic
+**Context:** Tux: finish M1 completely before M2. Plugin is enabled (GNOME look OK). Clock / Notifications / Activities / workspace pips still reported dead after `d0e12ef`.
+**Decision:**
+- Stay on `andy/m1-bars`. No M2 dock work.
+- Do not write `~/.config/hypr/familiar.lua` or edit `hyprland.lua`.
+- Workspace focus must match stock Omarchy 4.0.2 `plugins/bar/widgets/Workspaces.qml`: `bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"" + id + "\" })"))`. `hyprctl dispatch workspace N` is the wrong dispatcher on this Lua Hyprland. Not `Hyprland.dispatch`.
+- Clock click must open the stock `omarchy.clock` calendar (`BarWidget` + `Panel.qml` / `KeyboardPanel`). Host the registry component; keep `requestPopout` / `releasePopout` / `activePopout` / `clickTargets` / `barSize` / `position` / `foreground` / `barForeground` on Familiar `Bar.qml` so KeyboardPanel can anchor.
+- Notifications click must hit `shell.firstPartyServiceFor("omarchy.notifications").showRecentHistory()`.
+- Activities click must `shell.summon(manifest.id, '{"surface":"overview"}')` into the keep-loaded overlay `PanelWindow`. Overlay stub is enough for M1; do not build M4 overview.
+- Builders write only in the git repo. Sonic syncs the live plugin clone after verify.
+**Alternatives considered:** Custom ClockLabel summon fallback (already failed); classic `hyprctl dispatch workspace N` (HANDOFF was wrong vs live stock widget).
+**Status:** Active
