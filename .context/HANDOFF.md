@@ -25,4 +25,4 @@ M0 skeleton + M1 thin bars are in. Plugin **is enabled**. Tux likes the GNOME ba
 Use ACP `agentId: "codex"`. Isolated auth lives in `~/.openclaw/acpx/codex-home/auth.json` (copy from `~/.codex`, never echo). `agents.entries.codex` + `main.subagents.allowAgents: [codex, grok]`. Do **not** use OpenClaw `openai/gpt-5.6-sol` for long QML — idle-timeouts.
 
 ## GitHub
-Repo not created. `gh` not logged in on this host. After `gh auth login` (or Agent Settings → GitHub): `gh repo create eosdev-x/omarchy-familiar --private --source=. --remote=origin --push` from this checkout on `andy/m1-bars`.
+https://github.com/tuxclaw/omarchy-familiar (public, default `andy/m1-bars`). Account `tuxclaw`.
