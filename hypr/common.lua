@@ -12,5 +12,5 @@ o.bind("SUPER + SHIFT + F", "Familiar: cycle desktop profile",
   familiar .. " call " .. id .. " cycleProfile ''")
 
 hl.layer_rule({ match = { namespace = "familiar-bar" }, blur = true })
-hl.layer_rule({ match = { namespace = "familiar-dock" }, blur = true })
+hl.layer_rule({ match = { namespace = "familiar-dock" }, blur = true, ignore_alpha = 0.2 })
 hl.layer_rule({ match = { namespace = "familiar-switcher" }, no_anim = true, animation = "none" })
