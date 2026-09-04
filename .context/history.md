@@ -28,3 +28,15 @@
 **Changes:** Removed path arguments from overlay/service `reapply()`, kept all M0 live applies skipped/refused, allowlisted profile ids, made fallback persistence use an adjacent atomic tempfile, replaced invalid close dispatchers, and made test Lua generation atomically replace regular destinations while refusing symlinks.
 **Validation:** `tests/validate.sh` passed; `tests/hypr.sh` passed its embedded symlink-refusal case; explicit `--output` symlink test exited 3 without changing its target; `luac -p` passed for all three generated Lua files; `git diff --check` passed; no repository symlinks or test temp artifacts remained.
 **Commit:** `Fix M0 review safety findings` (this commit)
+
+## [2026-09-04] M1 attempt 1 incomplete
+**Agent:** Tails
+**Branch:** andy/m1-bars (from 040779c)
+**Changes:** none. Researched Quattro widget injection then idle-timed out. No commit.
+
+## [2026-09-04] M1 profile bars complete
+**Agent:** Tails
+**Branch:** andy/m1-bars
+**Changes:** Replaced the clock-only surface with GNOME, Plasma, and macOS profile-driven left/center/right sections; added activities, app menu, active-app, grouped task, tray, workspace, notification, clock, spacer, and stock Omarchy-widget hosts; added stock-panel navigation and expanded QML validation to every plugin QML file.
+**Validation:** `omarchy plugin validate .`, `tests/validate.sh`, `tests/hypr.sh`, generated-profile `luac -p`, and `git diff --check` passed. No plugin enablement or live Hyprland/config writes were performed.
+**Commit:** `Build profile-driven Familiar bars` (this commit)

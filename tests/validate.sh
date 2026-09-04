@@ -7,10 +7,5 @@ OMARCHY_SHELL=/usr/share/omarchy/shell
 
 omarchy plugin validate "$ROOT"
 
-"$QMLLINT" -I "$OMARCHY_SHELL" \
-  "$ROOT/Familiar.qml" \
-  "$ROOT/Service.qml" \
-  "$ROOT/Overlay.qml" \
-  "$ROOT/Bar.qml" \
-  "$ROOT/ui/bar/BarSurface.qml" \
-  "$ROOT/ui/bar/ClockLabel.qml"
+mapfile -t qml_files < <(find "$ROOT" -type f -name '*.qml' -not -path '*/.git/*' | sort)
+"$QMLLINT" -I "$OMARCHY_SHELL" "${qml_files[@]}"
