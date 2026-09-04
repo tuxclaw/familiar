@@ -1,6 +1,8 @@
 # Familiar
 
-Familiar is an Omarchy Quattro plugin that switches among GNOME-, Plasma-, and Mac-inspired desktop paradigms. It uses Omarchy's theme through `qs.Commons.Color` and `Style` and runs inside the single long-running `omarchy-shell` Quickshell process.
+Familiar switches among GNOME-, Plasma-, and Mac-inspired desktop paradigms.
+
+It is a plugin for **Omarchy** (Quattro shell) on **Hyprland**. It uses Omarchy's theme through `qs.Commons.Color` and `Style` and runs inside the single long-running `omarchy-shell` Quickshell process.
 
 Plugin id: `io.github.tuxclaw.familiar`
 
@@ -22,7 +24,7 @@ Kinds are `bar`, `overlay`, and `service` only. Never `panel`. Revert the bar wi
 ## Enable
 
 ```sh
-omarchy plugin add https://github.com/tuxclaw/omarchy-familiar.git --enable --yes
+omarchy plugin add https://github.com/tuxclaw/familiar.git --enable --yes
 omarchy bar use io.github.tuxclaw.familiar
 ```
 
