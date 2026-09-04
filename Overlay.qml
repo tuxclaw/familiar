@@ -82,6 +82,7 @@ Item {
     pinned: root.service ? root.service.pinnedApps() : []
     runningIndicator: root.dockProfile.runningIndicator || "dot"
     showRunning: root.dockProfile.showRunning !== false
+    onShowLauncher: root.open('{"surface":"launcher"}')
   }
 
   PanelWindow {

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import Quickshell
 import qs.Commons
 
@@ -12,6 +13,9 @@ Item {
   property string indicatorStyle: "dot"
   property bool pinned: false
   property bool fallbackActive: false
+  property bool showRunningIndicator: true
+  property bool contextMenuEnabled: true
+  property string tooltipText: String(entry.name || "")
 
   readonly property string executableIcon: Quickshell.iconPath("application-x-executable", "application-x-executable")
   readonly property string primaryIconSource: iconSource(entry.icon)
@@ -50,6 +54,7 @@ Item {
   }
 
   RunningIndicator {
+    visible: root.showRunningIndicator
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     style: root.indicatorStyle
@@ -57,6 +62,7 @@ Item {
   }
 
   MouseArea {
+    id: iconMouse
     anchors.fill: parent
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     hoverEnabled: true
@@ -64,10 +70,14 @@ Item {
     onPositionChanged: function(mouse) { root.dockSurface.pointerPosition = mapToItem(root.dockSurface, mouse.x, mouse.y) }
     onExited: root.dockSurface.pointerPosition = Qt.point(-10000, -10000)
     onClicked: function(mouse) {
-      if (mouse.button === Qt.RightButton)
+      if (mouse.button === Qt.RightButton && root.contextMenuEnabled)
         root.contextRequested(root.entry, mapToItem(root.parent, mouse.x, mouse.y))
-      else
+      else if (mouse.button === Qt.LeftButton)
         root.activated(root.entry)
     }
   }
+
+  ToolTip.visible: iconMouse.containsMouse && root.tooltipText.length > 0
+  ToolTip.text: root.tooltipText
+  ToolTip.delay: 500
 }

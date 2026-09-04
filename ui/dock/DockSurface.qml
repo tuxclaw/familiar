@@ -15,8 +15,18 @@ Rectangle {
   property point pointerPosition: Qt.point(-10000, -10000)
   property var pinnedEntries: []
   property var runningEntries: []
+  readonly property var launcherEntry: ({
+    desktopId: "",
+    pinId: "",
+    name: "Applications",
+    icon: Quickshell.iconPath("view-app-grid", "view-grid-symbolic"),
+    windows: [],
+    windowCount: 0,
+    pinned: false
+  })
 
   signal contextRequested(var entry, point position)
+  signal showLauncher()
 
   function normalize(id) {
     var value = String(id || "").trim()
@@ -161,6 +171,26 @@ Rectangle {
         onActivated: root.activate(entry)
         onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
       }
+    }
+
+    DockSeparator {
+      vertical: true
+      visible: root.pinnedEntries.length + root.runningEntries.length > 0
+      anchors.verticalCenter: parent.verticalCenter
+    }
+
+    DockIcon {
+      entry: root.launcherEntry
+      dockSurface: root
+      appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
+      iconSize: root.iconSize
+      magnifyScale: root.magnifyFor(root.pinnedEntries.length + root.runningEntries.length, this)
+      indicatorStyle: root.runningIndicator
+      pinned: false
+      showRunningIndicator: false
+      contextMenuEnabled: false
+      tooltipText: "Applications"
+      onActivated: root.showLauncher()
     }
   }
 }

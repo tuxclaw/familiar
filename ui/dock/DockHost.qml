@@ -16,6 +16,8 @@ Item {
   property string runningIndicator: "dot"
   property var pinned: []
 
+  signal showLauncher()
+
   Variants {
     model: host.enabled ? Quickshell.screens : []
 
@@ -73,6 +75,7 @@ Item {
           opacity: dockWindow.dockShown ? 1 : 0
           transform: Translate { y: dockWindow.dockShown ? 0 : dock.height - 2; Behavior on y { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } } }
           Behavior on opacity { NumberAnimation { duration: 120 } }
+          onShowLauncher: host.showLauncher()
           onContextRequested: function(entry, position) { menu.openFor(entry, entry.pinned, mapToItem(parent, position.x, position.y).x) }
         }
 
