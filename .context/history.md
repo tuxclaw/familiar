@@ -128,3 +128,9 @@
 **Files:** Overlay.qml, README.md, tests/validate.sh, lib/Apps.js, ui/launcher/*
 **Validation:** tests/validate.sh, tests/hypr.sh, git diff --check passed.
 **Commit:** 693c24b Build M3 overlay launcher
+
+## [2026-09-04 18:26] Session save for M5 polish
+**Agent:** Sonic
+**Branch:** main @ 1e2b59c (will bump after this handoff commit)
+**Changes:** Handoff rewritten for next session. M0–M4 live. Marketplace #4948. applyHypr still skipped.
+**Next:** M5 polish.
