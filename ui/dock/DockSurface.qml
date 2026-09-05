@@ -125,8 +125,8 @@ Rectangle {
   implicitWidth: dockRow.implicitWidth + 16
   implicitHeight: iconSize * (magnification ? 1.55 : 1) + 28
   radius: Math.min(18, implicitHeight / 3)
-  color: Util.alpha(Color.bar.background, familiar.isLight ? 0.9 : 1)
-  border.color: Color.bar.text
+  color: Color.menu.background
+  border.color: Color.menu.border
   border.width: 1
 
   onPinnedChanged: rebuild()

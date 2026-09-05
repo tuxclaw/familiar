@@ -13,8 +13,8 @@ Rectangle {
   width: 176
   height: menuColumn.implicitHeight + 12
   radius: 10
-  color: Color.bar.background
-  border.color: Color.bar.text
+  color: Color.menu.background
+  border.color: Color.menu.border
   border.width: 1
   z: 20
 
@@ -36,13 +36,13 @@ Rectangle {
         width: menuColumn.width
         height: 34
         radius: 6
-        color: actionMouse.containsMouse ? Color.bar.hover : "transparent"
+        color: actionMouse.containsMouse ? Color.menu.selectedBackground : "transparent"
         Text {
           anchors.fill: parent
           anchors.leftMargin: 10
           verticalAlignment: Text.AlignVCenter
           text: modelData
-          color: Color.bar.text
+          color: Color.menu.text
           font.family: Style.font.family
         }
         MouseArea {
