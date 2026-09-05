@@ -51,7 +51,7 @@ Target runtime: **Omarchy 4.0.2 Quattro** (`omarchy-shell`, one Quickshell proce
 | M2 | Overlay dock, pins, running apps, autohide | Done |
 | M3 | Launcher (grid / kickoff / spotlight) + dock Applications tile | Done |
 | M4 | Overview + switcher | Done in tree |
-| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | In progress — awaiting live verification and `preview.png` capture |
+| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | In progress — `preview.png` captured |
 
 Default branch: `main` (M0–M4). Milestone branches `andy/m0-skeleton` … `andy/m4-overview` remain as history.
 
@@ -217,7 +217,7 @@ Remove the guarded `require("hypr.familiar")` from `hyprland.lua` if you added i
 ## Limits
 
 - Plugins run **unsandboxed**. Familiar does no network and performs no privilege escalation.
-- `preview.png` awaits a real desktop capture; no placeholder is shipped.
+- `preview.png` is a GNOME launcher shot from this machine (2560×1440).
 - Overview thumbs cap live `ScreencopyView` at 12.
 - Switcher commits on modifier release when detected, else 1.2s fallback.
 - Drag-to-workspace in overview is not guaranteed.
