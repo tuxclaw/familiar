@@ -18,11 +18,19 @@ Item {
 
   property string surface: "launcher"
   property bool opened: false
+  property bool windowShown: false
+  property real closedScale: 0.96
   property var payload: ({})
   readonly property var profile: service ? service.currentProfile : ({})
   readonly property var dockProfile: profile.dock || ({})
 
+  Familiar {
+    id: familiar
+    profile: root.profile
+  }
+
   function setProfile(profileId) {
+    if (arguments.length !== 1) return "refused"
     return service ? service.setProfile(profileId) : "unknown"
   }
 
@@ -35,6 +43,7 @@ Item {
   }
 
   function reapply() {
+    if (arguments.length !== 0) return "refused"
     return service ? service.reapply() : "unknown"
   }
 
@@ -55,20 +64,37 @@ Item {
       switcher.advance(parsed)
       return "ok"
     }
+    closeDelay.stop()
     surface = requestedSurface
     payload = parsed
-    opened = true
+    windowShown = true
+    opened = false
+    closedScale = root.profile.id === "macos" ? 0.92
+      : root.profile.id === "plasma" ? 1 : 0.96
     if (requestedSurface === "launcher") launcher.open(parsed)
     else if (requestedSurface === "overview") overview.open(parsed)
     else switcher.open(parsed)
+    Qt.callLater(function() { root.opened = true })
     return "ok"
   }
 
   function close() {
     if (surface === "switcher" && opened) switcher.commit()
+    return hideWindow()
+  }
+
+  function hideWindow() {
+    closedScale = root.profile.id === "plasma" ? 1 : 0.96
     opened = false
+    closeDelay.interval = familiar.motionFast
+    closeDelay.restart()
     payload = ({})
     return "ok"
+  }
+
+  Timer {
+    id: closeDelay
+    onTriggered: root.windowShown = false
   }
 
   function toggle(payloadJson) {
@@ -97,7 +123,7 @@ Item {
   PanelWindow {
     id: overlayWindow
 
-    visible: root.opened
+    visible: root.windowShown
     anchors {
       top: true
       bottom: true
@@ -118,46 +144,56 @@ Item {
       else keyCatcher.forceActiveFocus()
     }
 
-    Rectangle {
-      anchors.fill: parent
-      color: Color.background
-      opacity: 0.72
-    }
-
-    MouseArea {
-      anchors.fill: parent
-      onClicked: root.close()
-    }
-
     Item {
-      id: keyCatcher
+      id: animatedLayer
       anchors.fill: parent
-      focus: true
+      enabled: root.opened
+      opacity: root.opened ? 1 : 0
+      scale: root.opened ? 1 : root.closedScale
+      Behavior on opacity { NumberAnimation { duration: root.opened ? familiar.motionBase : familiar.motionFast; easing.type: root.opened ? familiar.motionCurve : Easing.OutCubic; easing.overshoot: root.profile.id === "macos" ? 1.2 : 0 } }
+      Behavior on scale { NumberAnimation { duration: root.opened ? familiar.motionBase : familiar.motionFast; easing.type: root.opened ? familiar.motionCurve : Easing.OutCubic; easing.overshoot: root.profile.id === "macos" ? 1.2 : 0 } }
+
+      Rectangle {
+        anchors.fill: parent
+        color: Color.background
+        opacity: Math.max(0, 0.72 + familiar.blurAlphaAdjustment)
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        onClicked: root.close()
+      }
+
+      Item {
+        id: keyCatcher
+        anchors.fill: parent
+        focus: true
 
       Keys.onEscapePressed: function(event) {
-        if (root.surface === "switcher") root.opened = false
+        if (root.surface === "switcher") root.hideWindow()
         else root.close()
         event.accepted = true
       }
       Keys.onReleased: function(event) {
         if (root.surface === "switcher" && (event.key === Qt.Key_Alt || event.key === Qt.Key_Meta || event.key === Qt.Key_Control)) {
           switcher.commit()
-          root.opened = false
+          root.hideWindow()
           event.accepted = true
         }
       }
     }
 
-    LauncherSurface {
-      id: launcher
-      anchors.fill: parent
-      visible: root.surface === "launcher"
-      style: root.profile.launcher ? root.profile.launcher.style : "grid"
-      service: root.service
-      onDismiss: root.close()
-    }
+      LauncherSurface {
+        id: launcher
+        anchors.fill: parent
+        visible: root.surface === "launcher"
+        style: root.profile.launcher ? root.profile.launcher.style : "grid"
+        service: root.service
+        onDismiss: root.close()
+      }
 
-    OverviewSurface { id: overview; anchors.fill: parent; visible: root.surface === "overview"; style: root.profile.overview ? root.profile.overview.style : "gnome"; service: root.service; onDismiss: root.close() }
-    SwitcherSurface { id: switcher; anchors.fill: parent; visible: root.surface === "switcher"; style: root.profile.switcher ? root.profile.switcher.style : "iconRow"; service: root.service; onDismiss: root.opened = false }
+      OverviewSurface { id: overview; anchors.fill: parent; visible: root.surface === "overview"; style: root.profile.overview ? root.profile.overview.style : "gnome"; service: root.service; onDismiss: root.close() }
+      SwitcherSurface { id: switcher; anchors.fill: parent; visible: root.surface === "switcher"; style: root.profile.switcher ? root.profile.switcher.style : "iconRow"; service: root.service; onDismiss: root.hideWindow() }
+    }
   }
 }

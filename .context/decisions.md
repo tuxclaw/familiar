@@ -52,4 +52,18 @@
 **By:** Sonic
 **Context:** Tux 14:09: M1 proven, go on M2.
 **Decision:** Dock is Overlay-owned `ui/dock/DockHost.qml`, never `kind: panel`. GNOME/Plasma dock off; macOS on. App launch = Omarchy `uwsm-app -- gtk-launch <id>.desktop`. `Service.applyHypr` stays skipped. No Loader `implicitHeight` assignments. Branch `andy/m2-dock` from current `andy/m1-bars`. Builder does not touch live bar/shell/hypr.
+**Status:** Active — `applyHypr` skip superseded by M5 polish 2026-09-04
+
+## [2026-09-04] M5 polish — motion, light theme, hot corner, applyHypr
+**By:** Sonic
+**Context:** M0–M4 live. HANDOFF next is M5. Marketplace #4948 open; validation wants `preview.png`; scanner false-positive on README word "sudo".
+**Decision:**
+- Branch `andy/m5-polish` from `main` @ `bb00289`. Tails implements in-repo only. No live plugin copy, no shell restart, no `~/.config/hypr` writes, no push.
+- Motion: SPEC §7.4 table + `Tokens.motionScale` from `hyprctl -j getoption animations:enabled` (0 → instant). Extend existing `Familiar.qml` token object (or add `ui/tokens` wired through it). Do not create a parallel token system.
+- Light theme: `ThemeBridge`/`isLight` from `Color.background` luminance. Hover/active `fg@0.06`/`fg@0.12`; blur alpha -0.1. No custom palette.
+- Hot corner: GNOME only. Top-left of each familiar-bar, 120 ms dwell → overlay overview. Do not break Activities WidgetButton / ModuleSlot clicks.
+- Ungate `Service.applyHypr()` with **no path argument**. Fixed output `~/.config/hypr/familiar.lua`. Refuse symlink/non-file. Adjacent tempfile like `tests/hypr.sh`. Allowlisted `gnome|plasma|macos`. Backup `~/.local/state/familiar/familiar.lua.prev`. `hyprctl reload` + restore prev on configerrors. Require insert only if `familiar:require` missing, and only after `require("hypr.looknfeel")` — never after bindings, never `sed` the SPEC way. `reapply()` calls `applyHypr()` with no path. Extra IPC path arg → refuse.
+- Prefer one shipped writer (`hypr/write.sh` or equivalent) shared with `tests/hypr.sh`. Do not make live Service call `tests/hypr.sh`.
+- README: drop the word `sudo` (scanner hit README:219); do not claim marketplace listing. Leave `preview.png` to Sonic (no fake image).
+- Still: no `required` on host-injected bar props; no Loader `implicitHeight`/`implicitWidth`; no `pragma Singleton`; no `kind: panel`.
 **Status:** Active

@@ -134,3 +134,10 @@
 **Branch:** main @ 1e2b59c (will bump after this handoff commit)
 **Changes:** Handoff rewritten for next session. M0–M4 live. Marketplace #4948. applyHypr still skipped.
 **Next:** M5 polish.
+
+## [2026-09-04 18:46] M5 polish in-tree
+**Agent:** Tails (ACP codex) + Sonic review
+**Branch:** andy/m5-polish
+**Changes:** Motion tokens + light theme in Familiar.qml; GNOME 3px hot corner; overlay open/close motion; macos dock bounce; hypr/write.sh shared writer; Service.applyHypr() no path, --apply profile only. Sonic swapped generate-before-require so a failed first write cannot leave a dangling hyprland.lua require.
+**Validation:** tests/validate.sh, tests/hypr.sh, git diff --check passed. No live plugin/hypr writes. No preview.png.
+**Next:** Tux click-prove after live-sync; screenshot preview.png; marketplace #4948 still OPEN.

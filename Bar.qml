@@ -26,6 +26,10 @@ Item {
   readonly property color barForeground: Color.bar.text
   readonly property string clockFormat: barConfig.clockFormat && barConfig.clockFormat !== "auto"
     ? barConfig.clockFormat : profileBar.clockFormat || "ddd HH:mm"
+  readonly property color familiarHover: familiar.barHover
+  readonly property color familiarActive: familiar.barActive
+  readonly property int hoverDuration: profile.id === "macos" ? Math.round(120 * familiar.motionScale) : familiar.motionFast
+  readonly property int motionCurve: familiar.motionCurve
 
   function registerHostedItem(item) {
     if (!item || hostedStockItems.indexOf(item) !== -1) return
@@ -92,6 +96,11 @@ Item {
   function run(command) {
     if (!command) return
     Util.execDetached(command)
+  }
+
+  function summonOverview() {
+    if (!shell || !manifest || typeof shell.summon !== "function") return
+    shell.summon(manifest.id, '{"surface":"overview"}')
   }
 
   function hostedBarWidget(pluginId, methodName, openedOnly) {
@@ -201,6 +210,7 @@ Item {
       BarSurface {
         anchors.fill: parent
         mode: root.profileBar.transparent || "solid"
+        lightTheme: familiar.isLight
 
         RowLayout {
           anchors.fill: parent
@@ -237,6 +247,28 @@ Item {
             Layout.preferredWidth: 1
             Layout.fillHeight: true
           }
+        }
+      }
+
+
+      Item {
+        id: hotCorner
+        visible: root.profile.id === "gnome" && root.position === "top"
+        anchors.top: parent.top
+        anchors.left: parent.left
+        width: Math.max(2, familiar.px(3))
+        height: Math.max(2, familiar.px(3))
+        z: 100
+
+        HoverHandler {
+          id: cornerHover
+          acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+          onHoveredChanged: if (hovered) cornerDwell.restart(); else cornerDwell.stop()
+        }
+        Timer {
+          id: cornerDwell
+          interval: 120
+          onTriggered: if (cornerHover.hovered) root.summonOverview()
         }
       }
     }

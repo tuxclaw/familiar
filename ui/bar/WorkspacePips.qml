@@ -35,6 +35,14 @@ RowLayout {
       horizontalMargin: focused ? 6 : 5
       verticalPadding: 0
       fixedHeight: root.bar ? root.bar.barSize : 16
+      Rectangle {
+        anchors.fill: parent
+        z: -1
+        radius: height / 2
+        color: pip.focused && pip.bar ? pip.bar.familiarActive : pipHover.hovered && pip.bar ? pip.bar.familiarHover : "transparent"
+        Behavior on color { ColorAnimation { duration: pip.bar ? pip.bar.hoverDuration : 100; easing.type: pip.bar ? pip.bar.motionCurve : Easing.OutCubic } }
+      }
+      HoverHandler { id: pipHover }
       onPressed: function() {
         if (!root.bar || typeof root.bar.run !== "function") return
         root.bar.run("hyprctl dispatch " + Util.shellQuote('hl.dsp.focus({ workspace = "' + pip.workspaceId + '" })'))

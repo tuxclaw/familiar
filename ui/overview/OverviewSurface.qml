@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Wayland
 import qs.Commons
 import "."
+import "../.."
 
 Item {
   id: root
@@ -10,13 +11,23 @@ Item {
   readonly property var windows: ToplevelManager.toplevels.values || []
   signal dismiss()
 
-  function open(payload) { enter.restart() }
+  Familiar {
+    id: familiar
+    profile: root.service ? root.service.currentProfile : ({})
+  }
+
+  function open(payload) {
+    root.opacity = 0
+    root.scale = root.style === "presentWindows" ? 1 : root.style === "missionControl" ? 0.92 : 0.96
+    enterOpacity.restart()
+    enterScale.restart()
+  }
 
   opacity: 0
-  scale: style === "presentWindows" ? 1 : 0.96
-  NumberAnimation { id: enter; target: root; property: "opacity"; from: 0; to: 1; duration: root.style === "presentWindows" ? 120 : root.style === "missionControl" ? 260 : 180; easing.type: Easing.OutCubic }
-  Behavior on scale { NumberAnimation { duration: root.style === "missionControl" ? 260 : 180; easing.type: root.style === "missionControl" ? Easing.OutBack : Easing.OutCubic } }
-  Component.onCompleted: scale = 1
+  scale: 1
+  readonly property int enterDuration: familiar.profileId === "macos" ? Math.round(300 * familiar.motionScale) : familiar.motionSlow
+  NumberAnimation { id: enterOpacity; target: root; property: "opacity"; to: 1; duration: root.enterDuration; easing.type: familiar.motionCurve; easing.overshoot: familiar.profileId === "macos" ? 1.2 : 0 }
+  NumberAnimation { id: enterScale; target: root; property: "scale"; to: 1; duration: root.enterDuration; easing.type: familiar.motionCurve; easing.overshoot: familiar.profileId === "macos" ? 1.2 : 0 }
 
   MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
 

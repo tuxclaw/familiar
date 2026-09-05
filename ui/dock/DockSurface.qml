@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import "../.."
 
 Rectangle {
   id: root
@@ -24,6 +25,11 @@ Rectangle {
     windowCount: 0,
     pinned: false
   })
+
+  Familiar {
+    id: familiar
+    profile: root.service ? root.service.currentProfile : ({})
+  }
 
   signal contextRequested(var entry, point position)
   signal showLauncher()
@@ -119,7 +125,7 @@ Rectangle {
   implicitWidth: dockRow.implicitWidth + 16
   implicitHeight: iconSize * (magnification ? 1.55 : 1) + 28
   radius: Math.min(18, implicitHeight / 3)
-  color: Color.bar.background
+  color: Util.alpha(Color.bar.background, familiar.isLight ? 0.9 : 1)
   border.color: Color.bar.text
   border.width: 1
 
@@ -145,6 +151,8 @@ Rectangle {
         magnifyScale: root.magnifyFor(index, this)
         indicatorStyle: root.runningIndicator
         pinned: modelData.pinned
+        profileId: familiar.profileId
+        motionScale: familiar.motionScale
         onActivated: root.activate(entry)
         onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
       }
@@ -168,6 +176,8 @@ Rectangle {
         magnifyScale: root.magnifyFor(root.pinnedEntries.length + index, this)
         indicatorStyle: root.runningIndicator
         pinned: false
+        profileId: familiar.profileId
+        motionScale: familiar.motionScale
         onActivated: root.activate(entry)
         onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
       }
@@ -187,6 +197,8 @@ Rectangle {
       magnifyScale: root.magnifyFor(root.pinnedEntries.length + root.runningEntries.length, this)
       indicatorStyle: root.runningIndicator
       pinned: false
+      profileId: familiar.profileId
+      motionScale: familiar.motionScale
       showRunningIndicator: false
       contextMenuEnabled: false
       tooltipText: "Applications"

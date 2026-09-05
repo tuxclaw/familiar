@@ -12,7 +12,7 @@ Rectangle {
   width: thumbnail ? 360 : 112
   height: thumbnail ? 82 : 118
   radius: 10
-  color: selected ? Color.menu.selectedBackground : "transparent"
+  color: "transparent"
   border.color: selected ? Color.accent : "transparent"
   border.width: selected ? 2 : 0
 

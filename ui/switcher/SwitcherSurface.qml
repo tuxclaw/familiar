@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Wayland
 import qs.Commons
 import "."
+import "../.."
 
 Item {
   id: root
@@ -11,6 +12,11 @@ Item {
   property var entries: []
   property int selectedIndex: -1
   signal dismiss()
+
+  Familiar {
+    id: familiar
+    profile: root.service ? root.service.currentProfile : ({})
+  }
 
   function rebuild() {
     var windows = ToplevelManager.toplevels.values || []
@@ -65,6 +71,14 @@ Item {
       orientation: root.style === "thumbnailList" ? ListView.Vertical : ListView.Horizontal
       spacing: 8
       clip: true
+      highlightFollowsCurrentItem: true
+      highlightMoveVelocity: -1
+      highlightMoveDuration: root.service && root.service.profile === "macos"
+        ? Math.round(120 * familiar.motionScale) : familiar.motionFast
+      highlight: Rectangle {
+        radius: 10
+        color: familiar.barActive
+      }
       delegate: SwitcherCell {
         required property var modelData
         required property int index

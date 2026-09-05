@@ -76,6 +76,19 @@ assert_contains ui/dock/DockIcon.qml 'sourceSize.width: width * Screen.devicePix
 assert_contains ui/dock/DockIcon.qml 'status === Image.Error'
 assert_contains ui/dock/DockIcon.qml 'value.indexOf("file://") === 0 || value.indexOf("image://") === 0'
 assert_contains ui/dock/DockContextMenu.qml 'root.entry.pinId || root.entry.desktopId'
+assert_contains Familiar.qml '["hyprctl", "-j", "getoption", "animations:enabled"]'
+assert_contains Familiar.qml 'Util.alpha(Color.foreground, 0.06)'
+assert_contains Familiar.qml 'Util.alpha(Color.foreground, 0.12)'
+assert_contains Bar.qml 'interval: 120'
+assert_contains Bar.qml 'root.summonOverview()'
+assert_contains Service.qml 'function applyHypr()'
+assert_contains Service.qml '["bash", writerPath, "--apply", keymap]'
+assert_contains Service.qml 'if (arguments.length !== 0) return "refused"'
+assert_contains Overlay.qml 'return service ? service.reapply() : "unknown"'
+if grep -Fq -- 'applyHypr("' "$ROOT/Service.qml" "$ROOT/Overlay.qml"; then
+  printf 'Path-bearing applyHypr call found\n' >&2
+  exit 1
+fi
 
 mapfile -t qml_files < <(find "$ROOT" -type f -name '*.qml' -not -path '*/.git/*' | sort)
 "$QMLLINT" -I "$OMARCHY_SHELL" "${qml_files[@]}"

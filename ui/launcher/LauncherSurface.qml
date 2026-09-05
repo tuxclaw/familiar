@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import "../../lib/Apps.js" as Apps
+import "../.."
 
 Item {
   id: root
@@ -19,6 +20,11 @@ Item {
   readonly property var appLibrary: service && service.shell ? service.shell.appLibrary : null
   readonly property int columns: 6
   signal dismiss()
+
+  Familiar {
+    id: familiar
+    profile: root.service ? root.service.currentProfile : ({})
+  }
 
   function desktopEntry(rawId) {
     var id = Apps.normalizeId(rawId)
@@ -103,7 +109,7 @@ Item {
     height: root.style === "grid" ? Math.min(parent.height - 64, 690) : Math.min(parent.height - 96, root.style === "spotlight" ? 560 : 620)
     radius: root.style === "grid" ? 24 : root.style === "kickoff" ? 12 : 14
     color: root.style === "grid" ? Color.background : Color.menu.background
-    opacity: root.style === "spotlight" ? 0.94 : 0.98
+    opacity: root.style === "spotlight" ? Math.max(0, 0.94 + familiar.blurAlphaAdjustment) : 0.98
     border.color: Color.menu.border
     border.width: 1
 

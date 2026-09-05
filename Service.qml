@@ -16,6 +16,7 @@ Item {
   property string profile: "gnome"
   readonly property var currentProfile: profiles[profile] || profiles.gnome || ({})
   property var barConfig: ({})
+  property string lastHyprResult: "idle"
 
   signal profileApplied(string profileId)
 
@@ -41,10 +42,11 @@ Item {
   }
 
   function setProfile(profileId) {
+    if (arguments.length !== 1) return "refused"
     if (!isKnownProfile(profileId) || !profiles[profileId]) return "unknown"
     profile = profileId
     persist(profileId)
-    applyHypr("")
+    applyHypr()
     profileApplied(profileId)
     return "ok"
   }
@@ -61,7 +63,8 @@ Item {
   }
 
   function reapply() {
-    return applyHypr("")
+    if (arguments.length !== 0) return "refused"
+    return applyHypr()
   }
 
   function resolved(key, profileValue) {
@@ -114,14 +117,32 @@ Item {
     persistProcess.running = true
   }
 
-  // M0 safety gate: no path-bearing apply is exposed over overlay IPC.
-  // Generation is exercised only by tests/hypr.sh; live writes stay disabled.
-  function applyHypr(outputPath) {
-    if (!outputPath) return "skipped"
-    return "refused"
+  // The writer owns the fixed live target. IPC can select a profile, never a path.
+  function applyHypr() {
+    if (arguments.length !== 0) return "refused"
+    var keymap = String(currentProfile.keymap || profile)
+    if (!isKnownProfile(keymap)) return "unknown"
+    if (hyprProcess.running) return "busy"
+    var writerUrl = Qt.resolvedUrl("hypr/write.sh").toString()
+    var writerPath = writerUrl.indexOf("file://") === 0 ? writerUrl.slice(7) : writerUrl
+    lastHyprResult = "running"
+    hyprProcess.command = ["bash", writerPath, "--apply", keymap]
+    hyprProcess.running = true
+    return "started"
   }
 
   Process { id: persistProcess }
+
+  Process {
+    id: hyprProcess
+    stdout: StdioCollector { id: hyprStdout; waitForEnd: true }
+    stderr: StdioCollector { id: hyprStderr; waitForEnd: true }
+    onExited: {
+      var message = String(exitCode === 0 ? hyprStdout.text : hyprStderr.text).trim()
+      root.lastHyprResult = exitCode === 0 ? (message || "ok") : (message || "failed")
+      if (exitCode !== 0) console.warn("Familiar: Hyprland apply failed: " + root.lastHyprResult)
+    }
+  }
 
   FileView {
     path: Qt.resolvedUrl("profiles/gnome.json")

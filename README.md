@@ -51,7 +51,7 @@ Target runtime: **Omarchy 4.0.2 Quattro** (`omarchy-shell`, one Quickshell proce
 | M2 | Overlay dock, pins, running apps, autohide | Done |
 | M3 | Launcher (grid / kickoff / spotlight) + dock Applications tile | Done |
 | M4 | Overview + switcher | Done in tree |
-| M5 | Motion polish, `preview.png`, marketplace | Not started |
+| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | In progress — awaiting live verification and `preview.png` capture |
 
 Default branch: `main` (M0–M4). Milestone branches `andy/m0-skeleton` … `andy/m4-overview` remain as history.
 
@@ -131,7 +131,7 @@ hyprctl configerrors
 
 Dock autohide keeps the layer mapped. Compositor blur uses `ignore_alpha = 0.2` so a hidden dock does not leave a blur ghost.
 
-`Service.qml` `applyHypr()` is still **skipped** on the live path. Profile switch does not rewrite `familiar.lua` until that gate is lifted. Disable should leave a loadable no-op so the `require` never 404s.
+`Service.qml` `applyHypr()` takes no arguments and writes only the fixed live path. Profile switching regenerates `familiar.lua`, reloads Hyprland, checks configuration errors, and restores the previous file if validation fails.
 
 ### GNOME keybinds (when `familiar.lua` is loaded)
 
@@ -216,8 +216,8 @@ Remove the guarded `require("hypr.familiar")` from `hyprland.lua` if you added i
 
 ## Limits
 
-- Plugins run **unsandboxed**. Familiar does no network and no `sudo`.
-- No `preview.png` yet.
+- Plugins run **unsandboxed**. Familiar does no network and performs no privilege escalation.
+- `preview.png` awaits a real desktop capture; no placeholder is shipped.
 - Overview thumbs cap live `ScreencopyView` at 12.
 - Switcher commits on modifier release when detected, else 1.2s fallback.
 - Drag-to-workspace in overview is not guaranteed.
