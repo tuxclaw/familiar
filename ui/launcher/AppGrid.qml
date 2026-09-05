@@ -8,10 +8,30 @@ GridView {
   signal activated(int index)
 
   model: entries
-  cellWidth: Math.max(112, width / 6)
+  cellWidth: Math.max(112, Math.floor(width / 6))
   cellHeight: 144
   clip: true
   interactive: true
+  reuseItems: true
+  pixelAligned: false
+  cacheBuffer: cellHeight * 8
+  displayMarginBeginning: cellHeight
+  displayMarginEnd: cellHeight
+  flickDeceleration: 1800
+  maximumFlickVelocity: 3500
+  boundsBehavior: Flickable.StopAtBounds
+  flickableDirection: Flickable.VerticalFlick
+  highlightFollowsCurrentItem: false
+
+  WheelHandler {
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: function(event) {
+      var dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y * 0.5
+      var maxY = Math.max(0, root.contentHeight - root.height)
+      root.contentY = Math.max(0, Math.min(maxY, root.contentY - dy))
+      event.accepted = true
+    }
+  }
 
   delegate: AppGridCell {
     required property var modelData

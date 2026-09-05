@@ -172,6 +172,13 @@ Item {
       model: root.results
       spacing: 3
       clip: true
+      reuseItems: true
+      pixelAligned: false
+      cacheBuffer: 480
+      flickDeceleration: 1800
+      maximumFlickVelocity: 3500
+      boundsBehavior: Flickable.StopAtBounds
+      flickableDirection: Flickable.VerticalFlick
       delegate: Column {
         required property var modelData
         required property int index

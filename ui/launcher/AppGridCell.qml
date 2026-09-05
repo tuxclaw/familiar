@@ -35,6 +35,8 @@ Item {
     sourceSize.height: height * Screen.devicePixelRatio
     fillMode: Image.PreserveAspectFit
     asynchronous: true
+    cache: true
+    smooth: true
   }
   Text {
     anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 8 }
