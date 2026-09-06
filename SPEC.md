@@ -49,7 +49,7 @@ Remaining **[verify]** items are collected in §12; nothing above is open.
 - Reproducing GNOME Shell / Plasma / macOS visually or using their trademarks, icons, wallpapers, or fonts. Familiar uses *metaphors* (Activities corner, application launcher button, dock with magnification), not brand assets.
 - Replacing Hyprland tiling. Each profile ships a tiling posture (GNOME: tile, Plasma: tile, Mac: float-by-default) but tiling stays available everywhere.
 - A settings app. `shell.json` + manifest schema is the settings surface.
-- Sandboxing. Plugins run unsandboxed; Familiar runs no network code and no `sudo`.
+- Sandboxing. Plugins run unsandboxed; Familiar runs no network code and does not request elevated permissions.
 
 ---
 
