@@ -186,4 +186,9 @@
 **Agent:** Sonic
 **Branch:** andy/m5-reapply-ipc @ 86733f3
 **Changes:** Copied Overlay.qml to live plugin; one `omarchy restart shell`. `reapply ''` → started; `familiar.lua` mtime 12:30:24; `reapply /tmp/x` refused; getProfile gnome; familiar-bar 32px + dock both monitors a:1; configerrors empty. Updated HANDOFF.md and README M5 status. Hot corner and profile-switch still unproven. Not merged/pushed.
-**Commit:** pending docs
+**Commit:** `75c651e`
+
+## [2026-09-10 12:35] M5 Tux live-proof
+**Agent:** Sonic
+**Branch:** andy/m5-reapply-ipc @ 75c651e
+**Changes:** Tux: working perfect. Hot corner accepted. Profile-switch and merge/push still waiting on Tux.

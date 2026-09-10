@@ -5,21 +5,20 @@
 **Plugin id:** `io.github.tuxclaw.familiar` (do not rename — live path depends on it)
 **Spec:** `SPEC.md` (v0.2)
 **Default branch:** `main` @ `c7dc4bf` (marketplace security). Live Overlay also has the reapply IPC fix.
-**Working branch:** `andy/m5-reapply-ipc` @ `86733f3` — not merged, not pushed.
+**Working branch:** `andy/m5-reapply-ipc` @ `75c651e` — not merged, not pushed.
 **Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar`
 **Active bar:** Familiar GNOME (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert bar:** `omarchy bar use omarchy.bar`
 
 ## Status
-M0–**M5 code complete** and live on this box except hot-corner pointer proof and profile-switch proof.
+M0–**M5 live** on this box. Tux 12:35 PDT: working perfect (includes hot corner). Profile-switch still unproven.
 
 **Marketplace:** https://github.com/omacom/omarchy-plugin-marketplace/issues/4948 — HANCORE blockers closed at `c7dc4bf`; awaiting re-validation. Listing ≠ security review.
 
 **This session:** documented `reapply ''` was `refused` because host `call(id, method, arg: string)` always passes one string. Overlay now accepts blank arg and calls pathless `Service.reapply()`. Live after one `omarchy restart shell`: `reapply ''` → `started`; `familiar.lua` rewritten 12:30 PDT; `reapply /tmp/x` → `refused`; `getProfile` = gnome; familiar-bar 32px + familiar-dock both monitors; `hyprctl configerrors` empty.
 
 ## Still unproven
-- GNOME top-left 3px / 120 ms hot corner → overview (needs Tux pointer).
-- `setProfile plasma` / `macos` / cycle (not run; compositor rewrite).
+- `setProfile plasma` / `macos` / cycle (not run; compositor rewrite). Merge/push of `andy/m5-reapply-ipc` not requested.
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel`.
