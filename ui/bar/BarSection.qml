@@ -29,13 +29,23 @@ Item {
   function clockSettings() {
     var layout = bar && bar.barConfig && bar.barConfig.layout
     var roles = ["left", "center", "right"]
+    var found = ({ id: "omarchy.clock" })
     for (var r = 0; layout && r < roles.length; r++) {
       var entries = Array.isArray(layout[roles[r]]) ? layout[roles[r]] : []
       for (var i = 0; i < entries.length; i++) {
-        if (itemId(entries[i]) === "omarchy.clock") return entries[i]
+        if (itemId(entries[i]) === "omarchy.clock") {
+          found = entries[i]
+          break
+        }
       }
     }
-    return ({ id: "omarchy.clock" })
+    var copy = ({ id: "omarchy.clock" })
+    if (found && typeof found === "object") {
+      for (var key in found) copy[key] = found[key]
+    }
+    if (bar && bar.clockFormat && bar.clockFormat !== "auto")
+      copy.format = bar.clockFormat
+    return copy
   }
 
   function weatherSettings() {
