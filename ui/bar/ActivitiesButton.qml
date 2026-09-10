@@ -4,9 +4,10 @@ import qs.Ui
 
 WidgetButton {
   id: root
-  text: "\ue900"
-  fontFamily: "omarchy"
-  horizontalMargin: 7.5
+  keepSpace: true
+  labelVisible: false
+  text: ""
+  fixedWidth: 27
   tooltipText: "Activities"
   foreground: Color.bar.text
   Rectangle {
@@ -15,6 +16,17 @@ WidgetButton {
     radius: height / 2
     color: activityHover.hovered && root.bar ? root.bar.familiarHover : "transparent"
     Behavior on color { ColorAnimation { duration: root.bar ? root.bar.hoverDuration : 100; easing.type: root.bar ? root.bar.motionCurve : Easing.OutCubic } }
+  }
+  Image {
+    z: -1
+    anchors.centerIn: parent
+    width: 16
+    height: 16
+    source: Qt.resolvedUrl("../../assets/omarchy-logo.svg")
+    sourceSize.width: 16
+    sourceSize.height: 16
+    fillMode: Image.PreserveAspectFit
+    asynchronous: true
   }
   HoverHandler { id: activityHover }
   onPressed: function() {
