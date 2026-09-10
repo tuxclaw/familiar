@@ -6,7 +6,7 @@ WidgetButton {
   id: root
   keepSpace: true
   labelVisible: false
-  text: ""
+  text: " "
   fixedWidth: 27
   tooltipText: "Activities"
   foreground: Color.bar.text
@@ -20,13 +20,14 @@ WidgetButton {
   Image {
     z: -1
     anchors.centerIn: parent
-    width: 16
-    height: 16
+    width: 18
+    height: 18
     source: Qt.resolvedUrl("../../assets/omarchy-logo.svg")
-    sourceSize.width: 16
-    sourceSize.height: 16
+    sourceSize.width: 18
+    sourceSize.height: 18
     fillMode: Image.PreserveAspectFit
-    asynchronous: true
+    onStatusChanged: if (status === Image.Error)
+      source = Qt.resolvedUrl("../../assets/omarchy-logo.png")
   }
   HoverHandler { id: activityHover }
   onPressed: function() {

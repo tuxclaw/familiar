@@ -64,6 +64,7 @@ fi
 assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
 assert_contains ui/bar/ActivitiesButton.qml 'Qt.resolvedUrl("../../assets/omarchy-logo.svg")'
 assert_contains ui/bar/ActivitiesButton.qml 'labelVisible: false'
+assert_contains ui/bar/ActivitiesButton.qml 'text: " "'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'text: "󰂛"'
