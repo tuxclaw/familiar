@@ -211,4 +211,18 @@
 **Agent:** Sonic
 **Branch:** andy/bar-weather-bell
 **Changes:** Independent verify. Hosts omarchy.weather like clock; GNOME center weather-clock-bell; Plasma/Mac weather before clock; BarIconButton bell 󰂛; no unread badge. tests/validate.sh 0, tests/hypr.sh 0, git diff --check 0. No Familiar network. Committing then live-sync.
-**Commit:** pending
+**Commit:** `a6b4219`
+
+## [2026-09-10 12:50] Notification bell click dead
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/bar-weather-bell @ a6b4219
+**Changes:** Tux: bell paints, click no-op. History files exist. Dispatch Tails to revert NotificationsIndicator to WidgetButton + bell glyph (M1 click path).
+**Commit:** pending Tails
+
+## [2026-09-10] Notification bell WidgetButton click fix complete
+**Agent:** Tails
+**Branch:** andy/bar-weather-bell @ a6b4219; left uncommitted.
+**Changes:** Restored NotificationsIndicator to WidgetButton, preserving bell text 󰂛, hover Rectangle/HoverHandler/ColorAnimation, and onPressed firstPartyServiceFor("omarchy.notifications").showRecentHistory(). Existing bar assignment retains inherited onBarChanged click registration and ModuleSlot press forwarding. Validation again requires WidgetButton and retains bell glyph, Notifications/unreadCount ban, and history-action assertions. Weather hosting unchanged.
+**Files:** ui/bar/NotificationsIndicator.qml, tests/validate.sh, .context/history.md, .context/.active-agent.
+**Tests:** tests/validate.sh exit 0 (QML lint warnings); tests/hypr.sh exit 0 (Hypr writer tests passed); git diff --check passed.
+**Assumptions:** Supplied history-file evidence and WidgetButton onBarChanged registration contract are authoritative; live click verification remains for Sonic/Tux. No network, live plugin copy, restart, commit, push, merge, or branch switch. Existing context edits preserved; active-agent marker cleared.

@@ -93,4 +93,15 @@
 - Tails in-repo only. No live plugin copy, no shell restart, no hypr writes, no commit, no push, no merge to main.
 - Still: no `kind: panel`, no Loader `implicitHeight`/`implicitWidth`, no `pragma Singleton`, no `required` on host-injected bar props, no network in Familiar.
 **Alternatives considered:** Move weather into `bar.layout.right` only (hides it from GNOME center); custom wttr.in widget (network, marketplace risk).
+**Status:** Active — notification click superseded 2026-09-10
+
+## [2026-09-10] Notification bell click — stay on WidgetButton
+**By:** Sonic
+**Context:** Tux: weather/bell look great; notification bell click does nothing. History files exist under `~/.local/state/omarchy/notifications/history/`, so empty replay is not the explanation. M1 clicks worked on `WidgetButton` + ModuleSlot `pressModuleClickTarget`. Tails switched the control to `qs.Ui.BarIconButton`, whose `opticalCanvas` stacks after WidgetButton's MouseArea. Stock weather still works because it is `registerHostedItem`'d registry chrome.
+**Decision:**
+- Stay on `andy/bar-weather-bell`. Iteration 2. Tails in-repo only.
+- Revert `NotificationsIndicator` to `WidgetButton` (M1 click path). Keep nerd-font bell `󰂛` as `text`. Never paint the word Notifications as the visible label. Optional `tooltipText` is fine.
+- Keep hover fill + `showRecentHistory()` click. Do not use BarIconButton for this control.
+- Register/unregister the notification item like other hosted clickables if needed so ModuleSlot fallback/`registerClickTarget` both see `triggerPress`.
+- No live copy, no restart, no commit, no push, no main merge.
 **Status:** Active

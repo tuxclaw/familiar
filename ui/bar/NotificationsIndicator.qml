@@ -2,7 +2,7 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 
-BarIconButton {
+WidgetButton {
   id: root
 
   text: "󰂛"

@@ -63,7 +63,7 @@ if grep -Fq -- 'implicitHeight:' "$ROOT/ui/bar/BarSection.qml"; then
 fi
 assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
-assert_contains ui/bar/NotificationsIndicator.qml 'BarIconButton {'
+assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'text: "󰂛"'
 if grep -Eq -- 'Notifications|unreadCount' "$ROOT/ui/bar/NotificationsIndicator.qml"; then
   printf 'Notification bell regression: label or invented unread count found\n' >&2
