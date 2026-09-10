@@ -192,3 +192,23 @@
 **Agent:** Sonic
 **Branch:** andy/m5-reapply-ipc @ 75c651e
 **Changes:** Tux: working perfect. Hot corner accepted. Profile-switch and merge/push still waiting on Tux.
+
+## [2026-09-10 12:44] Bar weather + notification bell start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/bar-weather-bell from andy/m5-reapply-ipc @ 6209740
+**Changes:** Dispatch Tails to host omarchy.weather as item `weather` and replace Notifications label with a bell.
+**Commit:** pending Tails
+
+## [2026-09-10] Bar weather host + notification bell complete
+**Agent:** Tails
+**Branch:** andy/bar-weather-bell; left uncommitted for Sonic.
+**Changes:** Familiar weather item hosts registry omarchy.weather with revision binding, ModuleSlot press forwarding, hosted-item registration/cleanup, and inline settings lookup across left/center/right. Weather precedes clock in GNOME center and Plasma/macOS right. Notifications uses the stock BarIconButton bell glyph with inherited click registration, existing hover animation, and showRecentHistory action; removed the hardcoded unread count and label.
+**Files:** ui/bar/BarSection.qml, ui/bar/NotificationsIndicator.qml, profiles/{gnome,plasma,macos}.json, tests/validate.sh, .context/history.md, .context/.active-agent.
+**Tests:** tests/validate.sh exit 0 (security checks passed; QML import/lint warnings remain); tests/hypr.sh exit 0; git diff --check passed. Validation covers weather hosting/settings/registration, profile order, icon-only notifications, showRecentHistory, and the existing Loader implicitHeight ban.
+**Assumptions:** Installed first-party weather owns data fetching and forecast/status click behavior; Familiar adds no network code. Installed notifications exposes popupModel but no unread count, so the bell has no badge. Live visual/click proof remains for Sonic; no live plugin copy, restart, host configuration writes, commit, push, merge, or branch switch. Existing context edits preserved; active-agent marker cleared.
+
+## [2026-09-10 12:47] Weather + bell Sonic verify
+**Agent:** Sonic
+**Branch:** andy/bar-weather-bell
+**Changes:** Independent verify. Hosts omarchy.weather like clock; GNOME center weather-clock-bell; Plasma/Mac weather before clock; BarIconButton bell 󰂛; no unread badge. tests/validate.sh 0, tests/hypr.sh 0, git diff --check 0. No Familiar network. Committing then live-sync.
+**Commit:** pending

@@ -8,7 +8,7 @@
     "transparent": "solid",
     "left": ["appMenu", "tasks"],
     "center": [],
-    "right": ["tray", "omarchyWidgets", "clock", "spacer"],
+    "right": ["tray", "omarchyWidgets", "weather", "clock", "spacer"],
     "clockFormat": "HH:mm\nddd d MMM"
   },
   "dock": {

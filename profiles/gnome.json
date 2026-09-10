@@ -7,7 +7,7 @@
     "reserve": true,
     "transparent": "solid",
     "left": ["activities", "workspaces"],
-    "center": ["clock", "notifications"],
+    "center": ["weather", "clock", "notifications"],
     "right": ["omarchyWidgets"],
     "clockFormat": "ddd HH:mm"
   },

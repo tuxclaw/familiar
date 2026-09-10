@@ -38,6 +38,18 @@ Item {
     return ({ id: "omarchy.clock" })
   }
 
+  function weatherSettings() {
+    var layout = bar && bar.barConfig && bar.barConfig.layout
+    var roles = ["left", "center", "right"]
+    for (var r = 0; layout && r < roles.length; r++) {
+      var entries = Array.isArray(layout[roles[r]]) ? layout[roles[r]] : []
+      for (var i = 0; i < entries.length; i++) {
+        if (itemId(entries[i]) === "omarchy.weather") return entries[i]
+      }
+    }
+    return ({ id: "omarchy.weather" })
+  }
+
   RowLayout {
     id: row
     anchors.fill: parent
@@ -60,6 +72,12 @@ Item {
           return itemName === "clock" ? root.registryComponent("omarchy.clock") : null
         }
         readonly property bool hostsStockClock: itemName === "clock" && stockClockComponent !== null
+        readonly property var stockWeatherComponent: {
+          var revision = root.bar.barWidgetRegistry.revision
+          return itemName === "weather" ? root.registryComponent("omarchy.weather") : null
+        }
+        readonly property bool hostsStockWeather: itemName === "weather" && stockWeatherComponent !== null
+        readonly property bool hostsStockWidget: hostsStockClock || hostsStockWeather
         readonly property var componentForItem: {
           switch (itemName) {
           case "activities": return activitiesComponent
@@ -70,6 +88,7 @@ Item {
           case "workspaces": return workspacesComponent
           case "notifications": return notificationsComponent
           case "clock": return stockClockComponent
+          case "weather": return stockWeatherComponent
           case "spacer": return spacerComponent
           case "omarchyWidgets": return stockWidgetsComponent
           default: return null
@@ -94,11 +113,12 @@ Item {
             if (!item) return
             if ("bar" in item) item.bar = root.bar
             if ("settings" in item) item.settings = familiarSlot.hostsStockClock
-              ? root.clockSettings() : root.itemSettings(familiarSlot.modelData)
+              ? root.clockSettings() : familiarSlot.hostsStockWeather
+              ? root.weatherSettings() : root.itemSettings(familiarSlot.modelData)
             if ("profileId" in item) item.profileId = String((root.bar.profile && root.bar.profile.id) || "")
             if ("format" in item) item.format = root.bar.clockFormat
             if ("fontFamily" in item) item.fontFamily = root.bar.fontFamily
-            if (familiarSlot.hostsStockClock) root.bar.registerHostedItem(item)
+            if (familiarSlot.hostsStockWidget) root.bar.registerHostedItem(item)
           }
         }
 
@@ -111,7 +131,7 @@ Item {
           }
         }
 
-        Component.onDestruction: if (hostsStockClock && activeItem) root.bar.unregisterHostedItem(activeItem)
+        Component.onDestruction: if (hostsStockWidget && activeItem) root.bar.unregisterHostedItem(activeItem)
       }
     }
 

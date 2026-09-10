@@ -80,3 +80,17 @@
 - Still: no `kind: panel`, no Loader `implicitHeight`/`implicitWidth`, no `pragma Singleton`, no path argument to `applyHypr`.
 **Alternatives considered:** Drop the third `call` argument (host schema forbids it); treat any string as ignore (reopens the path-arg escape).
 **Status:** Active
+
+## [2026-09-10] Bar weather host + notification bell
+**By:** Sonic
+**Context:** Tux wants weather on the Familiar bar and Notifications as a bell, not the word. First-party `omarchy.weather` already exists (`BarWidget.qml` + forecast popup). It is in `shell.json` `bar.layout.center`, but Familiar GNOME `omarchyWidgets` only instantiates `layout.right`, so weather never appears. Familiar must not fetch weather itself (no network; marketplace).
+**Decision:**
+- Branch `andy/bar-weather-bell` from `andy/m5-reapply-ipc` @ `6209740`.
+- Host `omarchy.weather` as Familiar item id `weather`, same ModuleSlot + registry pattern as `clock` → `omarchy.clock`. Bind `barWidgetRegistry.revision`. `registerHostedItem` so the stock popup/click path works. Pull inline settings from `bar.layout` for `omarchy.weather` like `clockSettings()`.
+- GNOME `profiles/gnome.json` center: `weather`, `clock`, `notifications` (weather left of clock).
+- Plasma right: `tray`, `omarchyWidgets`, `weather`, `clock`, `spacer`. Mac right: `tray`, `omarchyWidgets`, `weather`, `clock`.
+- `NotificationsIndicator`: icon-only (prefer `qs.Ui.BarIconButton` like stock weather). Nerd-font bell consistent with Omarchy Dnd `󰂛` / notification bell. Never paint the word Notifications. Unread = small badge/dot only if a real count exists on `omarchy.notifications`; do not invent a counter; hardcoded `unreadCount: 0` is not a fake badge. Click still `firstPartyServiceFor("omarchy.notifications").showRecentHistory()`. Keep WidgetButton/BarIconButton `registerClickTarget` path.
+- Tails in-repo only. No live plugin copy, no shell restart, no hypr writes, no commit, no push, no merge to main.
+- Still: no `kind: panel`, no Loader `implicitHeight`/`implicitWidth`, no `pragma Singleton`, no `required` on host-injected bar props, no network in Familiar.
+**Alternatives considered:** Move weather into `bar.layout.right` only (hides it from GNOME center); custom wttr.in widget (network, marketplace risk).
+**Status:** Active

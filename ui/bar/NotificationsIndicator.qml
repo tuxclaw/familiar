@@ -2,13 +2,10 @@ import QtQuick
 import qs.Commons
 import qs.Ui
 
-WidgetButton {
+BarIconButton {
   id: root
 
-  readonly property int unreadCount: 0
-  text: unreadCount > 0 ? "Notifications " + unreadCount : "Notifications"
-  fontFamily: bar ? bar.fontFamily : Style.font.family
-  fontSize: Style.font.body
+  text: "󰂛"
   foreground: Color.bar.text
   Rectangle {
     anchors.fill: parent

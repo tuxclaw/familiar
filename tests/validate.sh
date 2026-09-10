@@ -43,7 +43,17 @@ assert_contains ui/bar/WorkspacePips.qml 'Util.shellQuote('\''hl.dsp.focus({ wor
 assert_contains ui/bar/BarSection.qml 'root.registryComponent("omarchy.clock")'
 assert_contains ui/bar/BarSection.qml 'barWidgetRegistry.revision'
 assert_contains ui/bar/BarSection.qml 'case "clock": return stockClockComponent'
-assert_contains ui/bar/BarSection.qml 'if (familiarSlot.hostsStockClock) root.bar.registerHostedItem(item)'
+assert_contains ui/bar/BarSection.qml 'root.registryComponent("omarchy.weather")'
+assert_contains ui/bar/BarSection.qml 'case "weather": return stockWeatherComponent'
+assert_contains ui/bar/BarSection.qml 'readonly property bool hostsStockWeather: itemName === "weather" && stockWeatherComponent !== null'
+assert_contains ui/bar/BarSection.qml 'readonly property bool hostsStockWidget: hostsStockClock || hostsStockWeather'
+assert_contains ui/bar/BarSection.qml 'if (familiarSlot.hostsStockWidget) root.bar.registerHostedItem(item)'
+assert_contains ui/bar/BarSection.qml 'Component.onDestruction: if (hostsStockWidget && activeItem) root.bar.unregisterHostedItem(activeItem)'
+assert_contains ui/bar/BarSection.qml 'if (itemId(entries[i]) === "omarchy.weather") return entries[i]'
+assert_contains ui/bar/BarSection.qml '? root.weatherSettings() : root.itemSettings(familiarSlot.modelData)'
+assert_contains profiles/gnome.json '"center": ["weather", "clock", "notifications"]'
+assert_contains profiles/plasma.json '"right": ["tray", "omarchyWidgets", "weather", "clock", "spacer"]'
+assert_contains profiles/macos.json '"right": ["tray", "omarchyWidgets", "weather", "clock"]'
 assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(familiarSlot, mouse.button, mouse.x, mouse.y)'
 assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(stockSlot, mouse.button, mouse.x, mouse.y)'
 assert_contains ui/bar/BarSection.qml 'anchors.fill: parent'
@@ -53,9 +63,15 @@ if grep -Fq -- 'implicitHeight:' "$ROOT/ui/bar/BarSection.qml"; then
 fi
 assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
-assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
+assert_contains ui/bar/NotificationsIndicator.qml 'BarIconButton {'
+assert_contains ui/bar/NotificationsIndicator.qml 'text: "󰂛"'
+if grep -Eq -- 'Notifications|unreadCount' "$ROOT/ui/bar/NotificationsIndicator.qml"; then
+  printf 'Notification bell regression: label or invented unread count found\n' >&2
+  exit 1
+fi
 assert_contains ui/bar/WorkspacePips.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'shell.firstPartyServiceFor("omarchy.notifications")'
+assert_contains ui/bar/NotificationsIndicator.qml 'service.showRecentHistory()'
 assert_contains ui/bar/ActivitiesButton.qml 'root.bar.shell.summon(root.bar.manifest.id, '\''{"surface":"overview"}'\'')'
 assert_contains ui/dock/DockSurface.qml 'apps[i].startupClass'
 assert_contains ui/dock/DockSurface.qml 'DesktopEntries.byId(rawTarget)'
