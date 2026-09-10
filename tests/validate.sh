@@ -62,6 +62,8 @@ if grep -Fq -- 'implicitHeight:' "$ROOT/ui/bar/BarSection.qml"; then
   exit 1
 fi
 assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
+assert_contains ui/bar/ActivitiesButton.qml 'text: "\ue900"'
+assert_contains ui/bar/ActivitiesButton.qml 'fontFamily: "omarchy"'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'text: "󰂛"'

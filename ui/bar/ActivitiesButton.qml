@@ -4,9 +4,10 @@ import qs.Ui
 
 WidgetButton {
   id: root
-  text: "Activities"
-  fontFamily: bar ? bar.fontFamily : Style.font.family
-  fontSize: Style.font.body
+  text: "\ue900"
+  fontFamily: "omarchy"
+  horizontalMargin: 7.5
+  tooltipText: "Activities"
   foreground: Color.bar.text
   Rectangle {
     anchors.fill: parent
