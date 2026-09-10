@@ -9,7 +9,7 @@
     "left": ["activities", "workspaces"],
     "center": ["weather", "clock", "notifications"],
     "right": ["omarchyWidgets"],
-    "clockFormat": "ddd HH:mm"
+    "clockFormat": "ddd h:mm AP"
   },
   "dock": {
     "enabled": false,

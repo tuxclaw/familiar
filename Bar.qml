@@ -25,7 +25,7 @@ Item {
   readonly property color foreground: Color.bar.text
   readonly property color barForeground: Color.bar.text
   readonly property string clockFormat: barConfig.clockFormat && barConfig.clockFormat !== "auto"
-    ? barConfig.clockFormat : profileBar.clockFormat || "ddd HH:mm"
+    ? barConfig.clockFormat : profileBar.clockFormat || "ddd h:mm AP"
   readonly property color familiarHover: familiar.barHover
   readonly property color familiarActive: familiar.barActive
   readonly property int hoverDuration: profile.id === "macos" ? Math.round(120 * familiar.motionScale) : familiar.motionFast
@@ -178,7 +178,7 @@ Item {
     "left": ["activities", "workspaces"],
     "center": ["clock", "notifications"],
     "right": ["omarchyWidgets"],
-    "clockFormat": "ddd HH:mm"
+    "clockFormat": "ddd h:mm AP"
   })
 
   Familiar {
