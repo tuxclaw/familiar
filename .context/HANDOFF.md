@@ -1,53 +1,35 @@
-# Handoff — 2026-09-04 18:26 PDT
+# Handoff — 2026-09-10 12:30 PDT
 
 **Project (local):** `/home/tux/Documents/Projects/omarchy-familiar`
-**GitHub:** https://github.com/tuxclaw/familiar (public; renamed from omarchy-familiar)
+**GitHub:** https://github.com/tuxclaw/familiar (public)
 **Plugin id:** `io.github.tuxclaw.familiar` (do not rename — live path depends on it)
 **Spec:** `SPEC.md` (v0.2)
-**Branch:** `main` @ `1e2b59c` (default). Milestone `andy/m*` branches kept as history.
-**Account:** `tuxclaw`
+**Default branch:** `main` @ `c7dc4bf` (marketplace security). Live Overlay also has the reapply IPC fix.
+**Working branch:** `andy/m5-reapply-ipc` @ `86733f3` — not merged, not pushed.
 **Live install:** `~/.config/omarchy/plugins/io.github.tuxclaw.familiar`
 **Active bar:** Familiar GNOME (`omarchy bar use io.github.tuxclaw.familiar`)
 **Revert bar:** `omarchy bar use omarchy.bar`
-**shell.json extra:** `bar.dockEnabled=on`, `bar.dockAutohide=on`, `bar.dockPinned=chromium,org.gnome.Nautilus,obsidian`
-**shell.json backup:** `~/.config/omarchy/shell.json.bak.familiar.20260904121618`
-**hyprland.lua backup:** `~/.config/hypr/hyprland.lua.bak.familiar.20260904153012`
 
 ## Status
-M0–**M4 complete** and live on this box. Marketplace submitted: https://github.com/omacom/omarchy-plugin-marketplace/issues/4948 (Desktop; Bar/Launcher/Hyprland). Awaiting maintainer approval — listing ≠ security review.
+M0–**M5 code complete** and live on this box except hot-corner pointer proof and profile-switch proof.
 
-**Next session: M5 polish** — motion table, light-theme pass, hot corner, `preview.png`, README polish if needed, ungate `Service.qml` `applyHypr()` so profile switch rewrites `familiar.lua`, follow marketplace issue.
+**Marketplace:** https://github.com/omacom/omarchy-plugin-marketplace/issues/4948 — HANCORE blockers closed at `c7dc4bf`; awaiting re-validation. Listing ≠ security review.
 
-Tux 18:26 PDT: save progress, new session for polish.
+**This session:** documented `reapply ''` was `refused` because host `call(id, method, arg: string)` always passes one string. Overlay now accepts blank arg and calls pathless `Service.reapply()`. Live after one `omarchy restart shell`: `reapply ''` → `started`; `familiar.lua` rewritten 12:30 PDT; `reapply /tmp/x` → `refused`; `getProfile` = gnome; familiar-bar 32px + familiar-dock both monitors; `hyprctl configerrors` empty.
 
-## Proven on this machine
-- M1 bar clicks (Activities, clock, Notifications, pips, stock right icons).
-- M2 dock autohide + icons (Obsidian/OpenClaw via `DesktopEntries.byId` + `heuristicLookup`).
-- M3 launcher + dock Applications tile (GNOME bar has no Applications item).
-- M4 overview/switcher live-synced. Super tap / Activities for overview.
-- Dock blur ghost on autohide: `ignore_alpha = 0.2` on `familiar-dock` (`0c0b498`). Tux 15:33: fixed.
-- `hyprctl configerrors` empty after dropping invalid `ignore_zero`.
-
-## Hyprland
-GNOME `~/.config/hypr/familiar.lua` loaded. `require("hypr.familiar") -- familiar:require` immediately after `require("hypr.looknfeel")`.
-GNOME rebinds: Super-tap overview, Super+A launcher, Alt+Tab switcher, **Super+S overview (was scratchpad)**. Super+Space still Omarchy menu.
-`Service.qml` `applyHypr()` still returns `skipped`/`refused` — live writer not ungated. Profile switch does not regenerate Lua.
+## Still unproven
+- GNOME top-left 3px / 120 ms hot corner → overview (needs Tux pointer).
+- `setProfile plasma` / `macos` / cycle (not run; compositor rewrite).
 
 ## Hard platform facts
 - Kinds: `bar`, `overlay`, `service` only. Never `panel`.
-- IPC `call`/`summon` hit Overlay, not Service.
+- IPC `call`/`summon` hit Overlay, not Service. `call` always supplies one string arg.
 - No `pragma Singleton`. No Hyprlang. Theme = `qs.Commons.Color`/`Style`.
-- Custom bar **must not** `required` on `omarchyPath` / `barWidgetRegistry` / `barConfig`. Host fallback: `errorString` undefined in `shell.qml` — Familiar must load or the bar vanishes.
 - Never assign Loader `implicitHeight`/`implicitWidth`.
 - Bar clicks: ModuleSlot + `pressModuleClickTarget` + `qs.Ui.WidgetButton`.
-- Workspace focus: `bar.run("hyprctl dispatch " + Util.shellQuote('hl.dsp.focus({ workspace = "' + id + '" })'))`.
-- Dock launch: `uwsm-app -- gtk-launch <id>.desktop`.
-- `service.resolved()` is not reactive — dock enable/autohide needs `omarchy restart shell`.
-- New QML types often need a **single** `omarchy restart shell` (`hl.dsp.exec_cmd("omarchy-launch-shell")`). Do not spawn multiple shells.
-- Tails ACP often cannot `git commit`/`checkout -b`; Sonic commits.
-
-## Tails
-ACP `agentId: "codex"`. Isolated auth `~/.openclaw/acpx/codex-home/auth.json` (copy from `~/.codex`, never echo). Do **not** use OpenClaw `openai/gpt-5.6-sol` for long QML.
+- `applyHypr()` is pathless; writer is `hypr/write.sh --apply <gnome|plasma|macos>`.
+- New Overlay.qml needs **one** `omarchy restart shell`. Do not spawn multiple shells.
+- Tails = ACP `codex`. Sam = OpenClaw `openai/gpt-6-astra`. Sonic commits.
 
 ## Install (others)
 ```sh

@@ -179,5 +179,11 @@
 ## [2026-09-10 12:28] M5 reapply IPC Sonic verify
 **Agent:** Sonic
 **Branch:** andy/m5-reapply-ipc
-**Changes:** Independent verify. Overlay accepts omitted/blank host arg, calls Service.reapply() with 0 args, refuses non-empty. Restored Service zero-arg assert in validate.sh. tests/validate.sh 0, tests/hypr.sh 0, git diff --check 0. Committing then live-sync Overlay.qml only.
-**Commit:** pending
+**Changes:** Independent verify. Overlay accepts omitted/blank host arg, calls Service.reapply() with 0 args, refuses non-empty. Restored Service zero-arg assert in validate.sh. tests/validate.sh 0, tests/hypr.sh 0, git diff --check 0.
+**Commit:** `86733f3`
+
+## [2026-09-10 12:30] M5 reapply live-proof
+**Agent:** Sonic
+**Branch:** andy/m5-reapply-ipc @ 86733f3
+**Changes:** Copied Overlay.qml to live plugin; one `omarchy restart shell`. `reapply ''` → started; `familiar.lua` mtime 12:30:24; `reapply /tmp/x` refused; getProfile gnome; familiar-bar 32px + dock both monitors a:1; configerrors empty. Updated HANDOFF.md and README M5 status. Hot corner and profile-switch still unproven. Not merged/pushed.
+**Commit:** pending docs

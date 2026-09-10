@@ -50,10 +50,10 @@ Target runtime: **Omarchy 4.0.2 Quattro** (`omarchy-shell`, one Quickshell proce
 | M1 | Profile bars + stock Omarchy widget host | Done |
 | M2 | Overlay dock, pins, running apps, autohide | Done |
 | M3 | Launcher (grid / kickoff / spotlight) + dock Applications tile | Done |
-| M4 | Overview + switcher | Done in tree |
-| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | In progress — `preview.png` captured |
+| M4 | Overview + switcher | Done |
+| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | Code complete — live `reapply` proven; marketplace listing pending |
 
-Default branch: `main` (M0–M4). Milestone branches `andy/m0-skeleton` … `andy/m4-overview` remain as history.
+Default branch: `main` (M0–M5). Milestone branches `andy/m0-skeleton` … `andy/m5-polish` remain as history.
 
 ## Install
 
