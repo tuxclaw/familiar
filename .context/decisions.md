@@ -104,4 +104,10 @@
 - Keep hover fill + `showRecentHistory()` click. Do not use BarIconButton for this control.
 - Register/unregister the notification item like other hosted clickables if needed so ModuleSlot fallback/`registerClickTarget` both see `triggerPress`.
 - No live copy, no restart, no commit, no push, no main merge.
+**Status:** Active — firstPartyServiceFor path superseded 2026-09-10
+
+## [2026-09-10] Notification history via omarchy-shell IPC
+**By:** Sonic
+**Context:** WidgetButton revert still no-op. Third-party full bars get PluginFirstPartyServiceApi for `omarchy.notifications` with DND only — no `showRecentHistory`. Live proof: `omarchy-shell notifications showHistory` → `ok` and `omarchy-notifications` layers.
+**Decision:** Bell `onPressed` runs `bar.run("omarchy-shell notifications showHistory")`. Do not call `shell.firstPartyServiceFor("omarchy.notifications").showRecentHistory()`.
 **Status:** Active

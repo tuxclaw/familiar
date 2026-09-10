@@ -16,10 +16,8 @@ WidgetButton {
   }
   HoverHandler { id: notificationHover }
   onPressed: function() {
-    var shell = root.bar && root.bar.shell
-    if (!shell || typeof shell.firstPartyServiceFor !== "function") return
-    var service = shell.firstPartyServiceFor("omarchy.notifications")
-    if (service && typeof service.showRecentHistory === "function")
-      service.showRecentHistory()
+    if (!root.bar || typeof root.bar.run !== "function") return
+    // Third-party bars get a notifications proxy with DND only — no showRecentHistory.
+    root.bar.run("omarchy-shell notifications showHistory")
   }
 }

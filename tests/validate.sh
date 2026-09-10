@@ -70,8 +70,7 @@ if grep -Eq -- 'Notifications|unreadCount' "$ROOT/ui/bar/NotificationsIndicator.
   exit 1
 fi
 assert_contains ui/bar/WorkspacePips.qml 'WidgetButton {'
-assert_contains ui/bar/NotificationsIndicator.qml 'shell.firstPartyServiceFor("omarchy.notifications")'
-assert_contains ui/bar/NotificationsIndicator.qml 'service.showRecentHistory()'
+assert_contains ui/bar/NotificationsIndicator.qml 'root.bar.run("omarchy-shell notifications showHistory")'
 assert_contains ui/bar/ActivitiesButton.qml 'root.bar.shell.summon(root.bar.manifest.id, '\''{"surface":"overview"}'\'')'
 assert_contains ui/dock/DockSurface.qml 'apps[i].startupClass'
 assert_contains ui/dock/DockSurface.qml 'DesktopEntries.byId(rawTarget)'
