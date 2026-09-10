@@ -21,11 +21,11 @@ Item {
   function rebuild() {
     var windows = ToplevelManager.toplevels.values || []
     if (scope === "window") { entries = windows.slice(); return }
-    var seen = ({})
+    var seen = Object.create(null)
     var grouped = []
     for (var i = 0; i < windows.length; i++) {
       var id = String(windows[i].appId || windows[i].title || i)
-      if (seen[id]) continue
+      if (Object.prototype.hasOwnProperty.call(seen, id)) continue
       seen[id] = true
       grouped.push(windows[i])
     }

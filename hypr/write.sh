@@ -81,51 +81,89 @@ ensure_require() {
   trap - RETURN
 }
 
-apply_live() {
-  local profile=$1 home output config state previous errors
+guard_file() {
+  if [[ -L "$1" || ( -e "$1" && ! -f "$1" ) ]]; then
+    printf 'refusing symlink/non-file: %s\n' "$1" >&2
+    return 3
+  fi
+}
+
+atomic_copy() (
+  local source=$1 output=$2 tmp
+  guard_file "$source" || exit 3
+  [[ -f "$source" ]] || exit 3
+  guard_file "$output" || exit 3
+  tmp=$(mktemp -- "${output%/*}/.familiar-copy.XXXXXX") || exit 3
+  trap 'rm -f -- "$tmp"' EXIT
+  cp -- "$source" "$tmp" || exit 3
+  guard_file "$output" || exit 3
+  mv -fT -- "$tmp" "$output"
+)
+
+apply_live() (
+  local profile=$1 familiar_home output config state previous errors transaction
+  local mutated=0 had_output=0
   profile_ok "$profile"
-  home=${HOME:?HOME is not set}
-  output="$home/.config/hypr/familiar.lua"
-  config="$home/.config/hypr/hyprland.lua"
-  state="$home/.local/state/familiar"
+  familiar_home=${HOME:?HOME is not set}
+  output="$familiar_home/.config/hypr/familiar.lua"
+  config="$familiar_home/.config/hypr/hyprland.lua"
+  state="$familiar_home/.local/state/familiar"
   previous="$state/familiar.lua.prev"
 
-  if [[ -L "$output" ]]; then
-    printf 'refusing symlink output: %s\n' "$output" >&2
-    return 3
-  fi
-  if [[ -e "$output" && ! -f "$output" ]]; then
-    printf 'refusing non-file output: %s\n' "$output" >&2
-    return 3
+  guard_file "$output"
+  guard_file "$config"
+  [[ -f "$config" ]]
+  guard_file "$previous"
+  transaction=$(mktemp -d -- "${config%/*}/.familiar-apply.XXXXXX")
+  finish_apply() {
+    local status=$?
+    trap - EXIT
+    if (( status != 0 && mutated )); then
+      atomic_copy "$transaction/config.before" "$config" || status=5
+      if (( had_output )); then
+        atomic_copy "$transaction/output.before" "$output" || status=5
+      elif guard_file "$output"; then
+        rm -f -- "$output"
+      else
+        status=5
+      fi
+      hyprctl reload >/dev/null 2>&1 || true
+    fi
+    rm -rf -- "$transaction"
+    exit "$status"
+  }
+  trap finish_apply EXIT
+  cp -- "$config" "$transaction/config.before"
+  cp -- "$config" "$transaction/config.after"
+  # Validate and stage require insertion before replacing either live file.
+  ensure_require "$transaction/config.after"
+  generate "$profile" "$transaction/output.after"
+  if [[ -f "$output" ]]; then
+    had_output=1
+    cp -- "$output" "$transaction/output.before"
+  else
+    : > "$transaction/output.before"
   fi
   mkdir -p -- "$state"
-  if [[ -f "$output" && ! -L "$output" ]]; then cp -f -- "$output" "$previous"; else : > "$previous"; fi
-  generate "$profile" "$output"
-  ensure_require "$config"
+  atomic_copy "$transaction/output.before" "$previous"
+  mutated=1
+  atomic_copy "$transaction/output.after" "$output"
+  atomic_copy "$transaction/config.after" "$config"
 
   if ! hyprctl reload >/dev/null; then
-    restore_previous "$previous" "$output"
     printf 'failed: hyprctl reload\n' >&2
-    return 5
+    exit 5
   fi
   errors=$(hyprctl configerrors 2>&1) || {
-    restore_previous "$previous" "$output"
     printf 'failed: hyprctl configerrors: %s\n' "$errors" >&2
-    return 5
+    exit 5
   }
   if [[ -n "${errors//[[:space:]]/}" ]]; then
-    restore_previous "$previous" "$output"
-    hyprctl reload >/dev/null 2>&1 || true
     printf 'failed: Hyprland config errors: %s\n' "$errors" >&2
-    return 5
+    exit 5
   fi
   printf 'ok\n'
-}
-
-restore_previous() {
-  local previous=$1 output=$2
-  if [[ -s "$previous" ]]; then cp -f -- "$previous" "$output"; else : > "$output"; fi
-}
+)
 
 case "${1:-}" in
   --generate)

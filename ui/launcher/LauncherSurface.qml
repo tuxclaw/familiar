@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import "../../lib/Apps.js" as Apps
+import "../../lib/Input.js" as Input
 import "../.."
 
 Item {
@@ -52,14 +53,14 @@ Item {
     if (style === "kickoff" && category !== "All") source = source.filter(function(entry) {
       return String(entry.categories).toLowerCase().indexOf(category.toLowerCase()) >= 0
     })
-    var ranked = Apps.rank(source, search.text, frecency)
-    if (search.text.trim().length >= 2) ranked = ranked.concat(Apps.rank(commands, search.text, frecency))
+    var ranked = Apps.rank(source, Input.boundedText(search.text), frecency)
+    if (search.text.trim().length >= 2) ranked = ranked.concat(Apps.rank(commands, Input.boundedText(search.text), frecency))
     results = ranked
     selectedIndex = results.length ? Math.max(0, Math.min(selectedIndex, results.length - 1)) : -1
   }
 
   function mergeCommands() {
-    var byAction = ({})
+    var byAction = Object.create(null)
     var merged = []
     var sources = defaultCommands.concat(userCommands)
     for (var i = 0; i < sources.length; i++) {
@@ -72,7 +73,7 @@ Item {
   }
 
   function open(payload) {
-    search.text = payload && payload.query ? String(payload.query) : ""
+    search.text = Input.boundedText(payload && payload.query)
     selectedIndex = 0
     updateResults()
     search.focusInput()
@@ -97,7 +98,7 @@ Item {
     }
     frecency[entry.id] = Number(frecency[entry.id] || 0) + 1
     frecency = Object.assign({}, frecency)
-    persistProcess.command = ["bash", "-c", "mkdir -p -- \"$HOME/.local/state/familiar\"; printf '%s\\n' \"$1\" > \"$HOME/.local/state/familiar/frecency.json\"", "familiar-frecency", JSON.stringify(frecency)]
+    persistProcess.command = ["bash", "-c", "set -euo pipefail\nfamiliar_state=\"$HOME/.local/state/familiar\"\noutput=\"$familiar_state/frecency.json\"\nmkdir -p -- \"$familiar_state\"\n[[ ! -L \"$output\" && ( ! -e \"$output\" || -f \"$output\" ) ]] || exit 3\ntmp=$(mktemp -- \"$familiar_state/.frecency.json.XXXXXX\")\ntrap 'rm -f -- \"$tmp\"' EXIT\nprintf '%s\\n' \"$1\" > \"$tmp\"\n[[ ! -L \"$output\" && ( ! -e \"$output\" || -f \"$output\" ) ]] || exit 3\nmv -fT -- \"$tmp\" \"$output\"", "familiar-frecency", JSON.stringify(frecency)]
     persistProcess.running = true
     dismiss()
   }

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import QtQuick.Controls
 import Quickshell
 import qs.Commons
@@ -15,7 +16,7 @@ Item {
   property bool fallbackActive: false
   property bool showRunningIndicator: true
   property bool contextMenuEnabled: true
-  property string tooltipText: String(entry.name || "")
+  property string tooltipText: Input.boundedText(entry.name)
   property string profileId: "gnome"
   property real motionScale: 1
 
@@ -90,7 +91,17 @@ Item {
     }
   }
 
-  ToolTip.visible: iconMouse.containsMouse && root.tooltipText.length > 0
-  ToolTip.text: root.tooltipText
-  ToolTip.delay: 500
+  ToolTip {
+    id: tooltip
+    visible: iconMouse.containsMouse && text.length > 0
+    text: Input.boundedText(root.tooltipText)
+    delay: 500
+    contentItem: Text {
+      text: Input.boundedText(tooltip.text)
+      textFormat: Text.PlainText
+      color: Color.menu.text
+      font.family: Style.font.family
+      font.pixelSize: Style.font.body
+    }
+  }
 }

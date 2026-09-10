@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import Quickshell
 import qs.Commons
 
@@ -40,7 +41,8 @@ Item {
   }
   Text {
     anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 8 }
-    text: root.entry.name
+    text: Input.boundedText(root.entry.name)
+    textFormat: Text.PlainText
     color: Color.menu.text
     horizontalAlignment: Text.AlignHCenter
     elide: Text.ElideRight

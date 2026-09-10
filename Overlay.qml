@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons
+import "lib/Input.js" as Input
 import "ui/dock"
 import "ui/launcher"
 import "ui/overview"
@@ -48,32 +49,24 @@ Item {
   }
 
   function open(payloadJson) {
-    var parsed = {}
-    try {
-      parsed = JSON.parse(payloadJson || "{}")
-    } catch (error) {
-      console.warn("Familiar: invalid overlay payload: " + error)
-      return "invalid"
-    }
-
-    var requestedSurface = parsed.surface || "launcher"
-    if (["launcher", "overview", "switcher"].indexOf(requestedSurface) < 0)
-      return "unknown-surface"
-
+    var result = Input.parsePayload(payloadJson)
+    if (result.status !== "ok") return result.status
+    var sanitized = result.payload
+    var requestedSurface = sanitized.surface
     if (opened && requestedSurface === "switcher" && switcher.visible) {
-      switcher.advance(parsed)
+      switcher.advance(sanitized)
       return "ok"
     }
     closeDelay.stop()
     surface = requestedSurface
-    payload = parsed
+    payload = sanitized
     windowShown = true
     opened = false
     closedScale = root.profile.id === "macos" ? 0.92
       : root.profile.id === "plasma" ? 1 : 0.96
-    if (requestedSurface === "launcher") launcher.open(parsed)
-    else if (requestedSurface === "overview") overview.open(parsed)
-    else switcher.open(parsed)
+    if (requestedSurface === "launcher") launcher.open(sanitized)
+    else if (requestedSurface === "overview") overview.open(sanitized)
+    else switcher.open(sanitized)
     Qt.callLater(function() { root.opened = true })
     return "ok"
   }
@@ -98,7 +91,9 @@ Item {
   }
 
   function toggle(payloadJson) {
-    return opened ? close() : open(payloadJson)
+    var result = Input.parsePayload(payloadJson)
+    if (result.status !== "ok") return result.status
+    return opened ? close() : open(JSON.stringify(result.payload))
   }
 
   DockHost {

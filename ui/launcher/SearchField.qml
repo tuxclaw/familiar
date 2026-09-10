@@ -30,6 +30,7 @@ Rectangle {
 
   TextInput {
     id: input
+    maximumLength: 256
     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 54; rightMargin: 18 }
     color: Color.menu.text
     selectionColor: Color.accent

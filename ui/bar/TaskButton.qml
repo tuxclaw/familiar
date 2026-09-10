@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import qs.Commons
 
 Item {
@@ -20,7 +21,8 @@ Item {
     anchors.fill: parent
     anchors.leftMargin: Style.spacing.md
     anchors.rightMargin: Style.spacing.md
-    text: String(root.toplevel.title || root.toplevel.appId || "Application")
+    text: Input.boundedText(String(root.toplevel.title || root.toplevel.appId || "Application"))
+    textFormat: Text.PlainText
     color: Color.bar.text
     font.family: root.bar ? root.bar.fontFamily : Style.font.family
     font.pixelSize: Style.font.body

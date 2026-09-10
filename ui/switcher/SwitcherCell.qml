@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import Quickshell
 import qs.Commons
 
@@ -25,7 +26,8 @@ Rectangle {
   Text {
     anchors { left: root.thumbnail ? parent.left : undefined; leftMargin: root.thumbnail ? 82 : 0; right: root.thumbnail ? parent.right : undefined; bottom: root.thumbnail ? undefined : parent.bottom; bottomMargin: 8; verticalCenter: root.thumbnail ? parent.verticalCenter : undefined; horizontalCenter: root.thumbnail ? undefined : parent.horizontalCenter }
     width: root.thumbnail ? undefined : parent.width - 10
-    text: String(root.entry.title || root.entry.appId || "Window")
+    text: Input.boundedText(String(root.entry.title || root.entry.appId || "Window"))
+    textFormat: Text.PlainText
     color: Color.menu.text
     elide: Text.ElideRight
     horizontalAlignment: root.thumbnail ? Text.AlignLeft : Text.AlignHCenter

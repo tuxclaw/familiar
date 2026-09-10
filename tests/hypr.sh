@@ -15,7 +15,7 @@ test_symlink_output_refused() {
   local output
 
   test_dir=$(mktemp -d -- "$OUT_DIR/.symlink-test.XXXXXX")
-  target=$(mktemp)
+  target="$test_dir/target.lua"
   output="$test_dir/familiar.lua"
   printf '%s\n' 'outside-sentinel' > "$target"
   ln -s -- "$target" "$output"
@@ -27,8 +27,8 @@ test_symlink_output_refused() {
   grep -qx 'outside-sentinel' "$target"
 
   unlink -- "$output"
-  rmdir -- "$test_dir"
   unlink -- "$target"
+  rmdir -- "$test_dir"
 }
 
 test_require_insert() {
@@ -74,6 +74,46 @@ test_apply_and_rollback() {
   printf '%s\n' '#!/usr/bin/env bash' 'if [[ ${1:-} == configerrors ]]; then printf "%s" "${FAKE_CONFIG_ERRORS:-}"; fi' > "$fake_bin/hyprctl"
   chmod +x "$fake_bin/hyprctl"
 
+  # Invalid require placement must leave both existing files untouched.
+  printf '%s\n' 'known-good' > "$output"
+  cp -- "$config" "$test_dir/config.original"
+  printf '%s\n' 'require("hypr.bindings")' 'require("hypr.looknfeel")' > "$config"
+  cp -- "$config" "$test_dir/config.invalid"
+  if HOME="$fake_home" PATH="$fake_bin:$PATH" "$WRITER" --apply gnome >/dev/null 2>&1; then
+    echo 'writer accepted invalid require placement' >&2
+    return 1
+  fi
+  cmp -s "$config" "$test_dir/config.invalid"
+  grep -qx 'known-good' "$output"
+  cp -- "$test_dir/config.original" "$config"
+
+  # Backup symlinks (including dangling links) must never be followed.
+  mkdir -p -- "$fake_home/.local/state/familiar"
+  printf '%s\n' 'sentinel' > "$test_dir/sentinel"
+  ln -s -- "$test_dir/sentinel" "$fake_home/.local/state/familiar/familiar.lua.prev"
+  if HOME="$fake_home" PATH="$fake_bin:$PATH" "$WRITER" --apply gnome >/dev/null 2>&1; then
+    echo 'writer accepted symlink backup' >&2
+    return 1
+  fi
+  grep -qx 'sentinel' "$test_dir/sentinel"
+  cmp -s "$config" "$test_dir/config.original"
+  grep -qx 'known-good' "$output"
+  rm -- "$test_dir/sentinel"
+  if HOME="$fake_home" PATH="$fake_bin:$PATH" "$WRITER" --apply gnome >/dev/null 2>&1; then
+    echo 'writer accepted dangling backup symlink' >&2
+    return 1
+  fi
+  [[ ! -e "$test_dir/sentinel" ]]
+  rm -- "$fake_home/.local/state/familiar/familiar.lua.prev" "$output"
+
+  # A failed first apply removes its generated file and inserted require.
+  if HOME="$fake_home" PATH="$fake_bin:$PATH" FAKE_CONFIG_ERRORS='synthetic error' "$WRITER" --apply gnome >/dev/null 2>&1; then
+    echo 'writer accepted failed first apply' >&2
+    return 1
+  fi
+  [[ ! -e "$output" ]]
+  cmp -s "$config" "$test_dir/config.original"
+
   HOME="$fake_home" PATH="$fake_bin:$PATH" "$WRITER" --apply gnome >/dev/null
   grep -Fq 'familiar:require' "$config"
   grep -Fq 'gaps_in = 8' "$output"
@@ -110,3 +150,5 @@ test_symlink_output_refused
 test_require_insert
 test_symlink_config_refused
 test_apply_and_rollback
+
+printf "Hypr writer tests passed\n"

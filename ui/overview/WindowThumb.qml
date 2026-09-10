@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -63,7 +64,8 @@ Rectangle {
     Text {
       id: titleText
       anchors { fill: parent; margins: 6; leftMargin: 9; rightMargin: 9 }
-      text: String(root.toplevel.title || root.toplevel.appId || "Untitled window")
+      text: Input.boundedText(String(root.toplevel.title || root.toplevel.appId || "Untitled window"))
+      textFormat: Text.PlainText
       color: Color.menu.text
       elide: Text.ElideRight
       verticalAlignment: Text.AlignVCenter

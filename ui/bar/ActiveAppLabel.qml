@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import QtQuick.Layouts
 import Quickshell.Wayland
 import qs.Commons
@@ -8,7 +9,8 @@ Text {
   property var bar: null
   readonly property var activeToplevel: ToplevelManager.activeToplevel
 
-  text: activeToplevel ? String(activeToplevel.title || activeToplevel.appId || "") : ""
+  text: Input.boundedText(activeToplevel ? String(activeToplevel.title || activeToplevel.appId || "") : "")
+  textFormat: Text.PlainText
   visible: text.length > 0
   color: Color.bar.text
   font.family: bar ? bar.fontFamily : Style.font.family

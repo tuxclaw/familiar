@@ -71,31 +71,31 @@ Rectangle {
 
   function rebuild() {
     var windows = running || []
-    var byId = ({})
-    var desktops = ({})
+    var byId = Object.create(null)
+    var desktops = Object.create(null)
     for (var i = 0; i < windows.length; i++) {
       var appId = normalize(windows[i].appId)
       if (!appId) continue
       var windowDesktop = desktopEntry(appId)
       var desktopId = entryId(windowDesktop, appId)
-      if (!byId[desktopId]) byId[desktopId] = []
+      if (!Object.prototype.hasOwnProperty.call(byId, desktopId)) byId[desktopId] = []
       byId[desktopId].push(windows[i])
       if (windowDesktop) desktops[desktopId] = windowDesktop
     }
     var nextPinned = []
     var nextRunning = []
-    var included = ({})
+    var included = Object.create(null)
     for (var p = 0; p < pinned.length; p++) {
       var pinnedId = normalize(pinned[p])
       var desktop = desktopEntry(pinnedId)
       var canonicalId = entryId(desktop, pinnedId)
-      if (!canonicalId || included[canonicalId]) continue
+      if (!canonicalId || Object.prototype.hasOwnProperty.call(included, canonicalId)) continue
       var pinnedWindows = byId[canonicalId] || []
       nextPinned.push({ desktopId: canonicalId, pinId: pinnedId, name: desktop ? (desktop.name || canonicalId) : canonicalId, icon: desktop ? (desktop.icon || "") : "", windows: pinnedWindows, windowCount: pinnedWindows.length, pinned: true })
       included[canonicalId] = true
     }
     if (showRunning) Object.keys(byId).forEach(function(desktopId) {
-      if (included[desktopId]) return
+      if (Object.prototype.hasOwnProperty.call(included, desktopId)) return
       var desktop = desktops[desktopId] || root.desktopEntry(desktopId)
       nextRunning.push({ desktopId: root.entryId(desktop, desktopId), pinId: "", name: desktop ? (desktop.name || desktopId) : desktopId, icon: desktop ? (desktop.icon || "") : "", windows: byId[desktopId], windowCount: byId[desktopId].length, pinned: false })
     })

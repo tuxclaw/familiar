@@ -24,7 +24,7 @@ assert_contains Overlay.qml 'import "ui/launcher"'
 assert_contains Overlay.qml 'LauncherSurface {'
 assert_contains Overlay.qml 'import "ui/overview"'
 assert_contains Overlay.qml 'import "ui/switcher"'
-assert_contains Overlay.qml 'switcher.advance(parsed)'
+assert_contains Overlay.qml 'switcher.advance(sanitized)'
 assert_contains Overlay.qml 'WlrLayershell.namespace: root.surface === "switcher" ? "familiar-switcher" : "familiar-overlay"'
 assert_contains ui/overview/OverviewSurface.qml 'style: "gnome"'
 assert_contains ui/overview/OverviewSurface.qml 'livePreview: parent.index < 12'
@@ -95,6 +95,8 @@ if grep -Fq -- 'applyHypr("' "$ROOT/Service.qml" "$ROOT/Overlay.qml"; then
   printf 'Path-bearing applyHypr call found\n' >&2
   exit 1
 fi
+
+node "$ROOT/tests/security.js"
 
 mapfile -t qml_files < <(find "$ROOT" -type f -name '*.qml' -not -path '*/.git/*' | sort)
 "$QMLLINT" -I "$OMARCHY_SHELL" "${qml_files[@]}"

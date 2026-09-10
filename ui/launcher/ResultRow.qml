@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/Input.js" as Input
 import Quickshell
 import qs.Commons
 
@@ -36,8 +37,8 @@ Rectangle {
   Column {
     anchors { left: icon.right; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
     spacing: 2
-    Text { width: parent.width; text: root.entry.name; color: Color.menu.text; elide: Text.ElideRight; font.family: Style.font.family; font.pixelSize: Style.font.body; font.bold: root.selected }
-    Text { width: parent.width; text: root.entry.description || (root.entry.kind === "command" ? "Omarchy command" : root.entry.categories || "Application"); color: Color.muted; elide: Text.ElideRight; font.family: Style.font.family; font.pixelSize: Math.max(12, Style.font.caption) }
+    Text { width: parent.width; text: Input.boundedText(root.entry.name); textFormat: Text.PlainText; color: Color.menu.text; elide: Text.ElideRight; font.family: Style.font.family; font.pixelSize: Style.font.body; font.bold: root.selected }
+    Text { width: parent.width; text: Input.boundedText(root.entry.description || (root.entry.kind === "command" ? "Omarchy command" : root.entry.categories || "Application")); textFormat: Text.PlainText; color: Color.muted; elide: Text.ElideRight; font.family: Style.font.family; font.pixelSize: Math.max(12, Style.font.caption) }
   }
   HoverHandler { id: hover }
   TapHandler { onTapped: root.activated() }

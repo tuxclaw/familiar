@@ -141,3 +141,22 @@
 **Changes:** Motion tokens + light theme in Familiar.qml; GNOME 3px hot corner; overlay open/close motion; macos dock bounce; hypr/write.sh shared writer; Service.applyHypr() no path, --apply profile only. Sonic swapped generate-before-require so a failed first write cannot leave a dangling hyprland.lua require.
 **Validation:** tests/validate.sh, tests/hypr.sh, git diff --check passed. No live plugin/hypr writes. No preview.png.
 **Next:** Tux click-prove after live-sync; screenshot preview.png; marketplace #4948 still OPEN.
+
+## [2026-09-10 08:20] Marketplace security audit
+**Agent:** Sam (`openai/gpt-6-astra`)
+**Branch:** main @ e9c3471 (clean)
+**Verdict:** blocker
+**HANCORE #4948 comment 5581787997:** #1 confirmed (unbounded IPC JSON.parse / retained payload / launcher query). #2 confirmed (Wayland titles/app IDs → Text.AutoText; extra launcher/tooltip sinks).
+**Prior:** `reapply(outputPath)` escape remains closed.
+**Blockers:** Overlay.qml:53; ui/bar/ActiveAppLabel.qml:11 (+ TaskButton, WindowThumb, SwitcherCell, AppGridCell, ResultRow, DockIcon tooltip).
+**Warnings:** hypr/write.sh backup/rollback symlink + non-transactional apply; LauncherSurface frecency persist; DockSurface prototype-key collision.
+**GitHub:** no comment posted.
+
+## [2026-09-10] Marketplace security blockers fixed
+**Agent:** Tails
+**Branch:** andy/marketplace-security, based on e9c3471; left uncommitted for Sonic.
+**Files:** Overlay.qml; lib/Input.js, lib/Apps.js; ui/bar/{ActiveAppLabel,TaskButton}.qml; ui/overview/WindowThumb.qml; ui/switcher/{SwitcherCell,SwitcherSurface}.qml; ui/launcher/{AppGridCell,ResultRow,LauncherSurface,SearchField}.qml; ui/dock/{DockIcon,DockSurface}.qml; hypr/write.sh; tests/{validate.sh,hypr.sh,security.js}.
+**Changes:** 4096-byte pre-parse IPC cap; flat string-only allowlisted schema with sanitized retention; query/display cap 256, surface/scope cap 32; PlainText external sinks including custom tooltip content; atomic guarded frecency/backup/rollback; staged Hypr require validation and two-file rollback; null-prototype grouping maps.
+**Assumptions:** Missing IPC input defaults to {}; omitted surface defaults to launcher; scope remains a bounded string to preserve existing behavior. Hypr preflight validates the existing require-insertion contract; runtime errors trigger rollback.
+**Tests:** tests/validate.sh exit 0 (Security regression tests passed; qmllint import/unqualified-access warnings remain); tests/hypr.sh exit 0 (Hypr writer tests passed); git diff --check clean. Regression coverage includes oversized/multibyte input before parse, null/extra keys/nested values, sanitized open/toggle/advance, PlainText sinks, prototype keys, frecency symlink refusal, backup symlinks, invalid require order, first-apply and existing-file rollback.
+**Handoff:** No push, GitHub comment, live-sync, restart, or branch switch. Active-agent marker cleared.
