@@ -89,8 +89,11 @@ assert_contains Bar.qml 'interval: 120'
 assert_contains Bar.qml 'root.summonOverview()'
 assert_contains Service.qml 'function applyHypr()'
 assert_contains Service.qml '["bash", writerPath, "--apply", keymap]'
-assert_contains Service.qml 'if (arguments.length !== 0) return "refused"'
+assert_contains Overlay.qml 'function reapply(arg)'
+assert_contains Overlay.qml 'if (arguments.length > 1) return "refused"'
+assert_contains Overlay.qml 'if (arguments.length === 1 && (typeof arg !== "string" || arg.trim() !== "")) return "refused"'
 assert_contains Overlay.qml 'return service ? service.reapply() : "unknown"'
+assert_contains Service.qml 'if (arguments.length !== 0) return "refused"'
 if grep -Fq -- 'applyHypr("' "$ROOT/Service.qml" "$ROOT/Overlay.qml"; then
   printf 'Path-bearing applyHypr call found\n' >&2
   exit 1

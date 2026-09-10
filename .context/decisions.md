@@ -66,4 +66,17 @@
 - Prefer one shipped writer (`hypr/write.sh` or equivalent) shared with `tests/hypr.sh`. Do not make live Service call `tests/hypr.sh`.
 - README: do not name elevated-permission tools (scanner hit README:219); do not claim marketplace listing. Leave `preview.png` to Sonic (no fake image).
 - Still: no `required` on host-injected bar props; no Loader `implicitHeight`/`implicitWidth`; no `pragma Singleton`; no `kind: panel`.
+**Status:** Active — `reapply` empty-arg contract superseded 2026-09-10
+
+## [2026-09-10] M5 closeout — host `call()` always passes one string
+**By:** Sonic
+**Context:** Live `omarchy-shell shell call io.github.tuxclaw.familiar getProfile ''` returns `gnome`. Same host `call(id, method, arg: string)` always invokes `loader.item[method](arg)`. Documented `reapply ''` therefore hits Overlay/Service `arguments.length !== 0` and returns `refused`. Confirmed live. `reapply` with no third CLI arg is invalid (`3 required`). Non-empty path must still be refused. `applyHypr()` stays pathless.
+**Decision:**
+- Branch `andy/m5-reapply-ipc` from `main` @ `c7dc4bf`.
+- Overlay `reapply(arg)` accepts omitted or empty-string `arg` and then calls `service.reapply()` with **zero** arguments. Any non-empty string (path or otherwise) → `refused`.
+- Service `reapply()` / `applyHypr()` stay zero-arg. Do not pass the IPC string through.
+- Update `tests/validate.sh` asserts that currently require `arguments.length !== 0` on Service `reapply`. Cover empty vs non-empty in `tests/security.js`.
+- Tails in-repo only. No live plugin copy, no shell restart, no `~/.config/hypr` writes, no commit, no push.
+- Still: no `kind: panel`, no Loader `implicitHeight`/`implicitWidth`, no `pragma Singleton`, no path argument to `applyHypr`.
+**Alternatives considered:** Drop the third `call` argument (host schema forbids it); treat any string as ignore (reopens the path-arg escape).
 **Status:** Active

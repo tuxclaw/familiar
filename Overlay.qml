@@ -43,8 +43,9 @@ Item {
     return service ? service.getProfile() : "unknown"
   }
 
-  function reapply() {
-    if (arguments.length !== 0) return "refused"
+  function reapply(arg) {
+    if (arguments.length > 1) return "refused"
+    if (arguments.length === 1 && (typeof arg !== "string" || arg.trim() !== "")) return "refused"
     return service ? service.reapply() : "unknown"
   }
 

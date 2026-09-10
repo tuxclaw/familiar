@@ -160,3 +160,24 @@
 **Assumptions:** Missing IPC input defaults to {}; omitted surface defaults to launcher; scope remains a bounded string to preserve existing behavior. Hypr preflight validates the existing require-insertion contract; runtime errors trigger rollback.
 **Tests:** tests/validate.sh exit 0 (Security regression tests passed; qmllint import/unqualified-access warnings remain); tests/hypr.sh exit 0 (Hypr writer tests passed); git diff --check clean. Regression coverage includes oversized/multibyte input before parse, null/extra keys/nested values, sanitized open/toggle/advance, PlainText sinks, prototype keys, frecency symlink refusal, backup symlinks, invalid require order, first-apply and existing-file rollback.
 **Handoff:** No push, GitHub comment, live-sync, restart, or branch switch. Active-agent marker cleared.
+
+## [2026-09-10 12:21] M5 closeout start — reapply IPC refused
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/m5-reapply-ipc from main @ c7dc4bf
+**Changes:** Live-prove found `getProfile ''` = gnome; familiar-bar 32px + familiar-dock both monitors; `hyprctl configerrors` empty. `reapply ''` = refused because host `call()` always passes `arg: string`. Dispatching Tails to accept empty arg only.
+**Files:** Overlay.qml, tests/validate.sh, tests/security.js, .context/decisions.md
+**Commit:** pending Tails
+
+## [2026-09-10] M5 reapply IPC fix complete
+**Agent:** Tails
+**Branch:** andy/m5-reapply-ipc; left uncommitted for Sonic.
+**Changes:** Overlay accepts omitted or one empty/whitespace-only string and calls Service.reapply with zero arguments; nonblank, non-string, and extra arguments are refused. Service.reapply/applyHypr and setProfile guards remain unchanged. Updated validation contract and VM regression coverage.
+**Files:** Overlay.qml, tests/validate.sh, tests/security.js, .context/history.md, .context/.active-agent.
+**Tests:** tests/validate.sh passed (QML lint warnings); tests/hypr.sh passed; git diff --check passed.
+**Assumptions:** Supplied live host proof is authoritative; whitespace-only strings count as empty. No live IPC rerun, plugin sync, restart, host config writes, commit, push, or branch switch. Active-agent marker cleared.
+
+## [2026-09-10 12:28] M5 reapply IPC Sonic verify
+**Agent:** Sonic
+**Branch:** andy/m5-reapply-ipc
+**Changes:** Independent verify. Overlay accepts omitted/blank host arg, calls Service.reapply() with 0 args, refuses non-empty. Restored Service zero-arg assert in validate.sh. tests/validate.sh 0, tests/hypr.sh 0, git diff --check 0. Committing then live-sync Overlay.qml only.
+**Commit:** pending

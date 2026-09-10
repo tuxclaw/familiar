@@ -29,6 +29,27 @@ assert.equal(input.parseCalled, undefined);
 const cleanInput = vm.createContext({});
 vm.runInContext(read('lib/Input.js').replace('.pragma library', ''), cleanInput);
 const overlay = read('Overlay.qml');
+// The host supplies one IPC string; only blank input may reach the pathless service.
+let reapplyCalls = 0;
+const reapplyContext = vm.createContext({ service: {
+  reapply() {
+    assert.equal(arguments.length, 0);
+    reapplyCalls++;
+    return 'started';
+  }
+} });
+vm.runInContext(overlay.match(/  function reapply\([^]*?^  }/m)[0], reapplyContext);
+for (const args of [[], [''], [' \t\n']]) {
+  const before = reapplyCalls;
+  assert.equal(reapplyContext.reapply(...args), 'started');
+  assert.equal(reapplyCalls, before + 1);
+}
+for (const args of [['/tmp/x'], ['gnome'], [' /tmp/x '], [undefined], [null],
+  [0], [{}], ['', ''], ['', '/tmp/x']]) {
+  const before = reapplyCalls;
+  assert.equal(reapplyContext.reapply(...args), 'refused');
+  assert.equal(reapplyCalls, before);
+}
 const context = vm.createContext({ Input: cleanInput, opened: false,
   closeDelay: { stop() {} }, switcher: { visible: true, advance(value) { context.received = value; } },
   launcher: { open(value) { context.received = value; } },
