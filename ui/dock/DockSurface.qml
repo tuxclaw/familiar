@@ -14,6 +14,7 @@ Rectangle {
   property bool showRunning: true
   property string runningIndicator: "dot"
   property point pointerPosition: Qt.point(-10000, -10000)
+  property bool draggingPinned: false
   property var pinnedEntries: []
   property var runningEntries: []
   readonly property var launcherEntry: ({
@@ -103,6 +104,29 @@ Rectangle {
     runningEntries = nextRunning
   }
 
+  function reorderPinned(entry, position) {
+    if (!entry.pinned || !service) return
+    var next = pinned.map(function(id) { return root.normalize(id) })
+    var source = next.indexOf(normalize(entry.pinId || entry.desktopId))
+    if (source < 0) return
+    var moved = next.splice(source, 1)[0]
+    var insert = next.length
+    // Coordinates and centers are both in DockSurface space; ignore the source.
+    for (var i = 0; i < pinnedRepeater.count; i++) {
+      var tile = pinnedRepeater.itemAt(i)
+      if (!tile) continue
+      var id = normalize(tile.entry.pinId || tile.entry.desktopId)
+      if (id === moved) continue
+      var center = tile.mapToItem(root, tile.width / 2, tile.height / 2)
+      if (position.x < center.x) {
+        insert = next.indexOf(id)
+        break
+      }
+    }
+    next.splice(insert, 0, moved)
+    if (next.join(",") !== pinned.join(",")) service.persistPinned(next)
+  }
+
   function activate(entry) {
     if (entry.windows && entry.windows.length > 0 && typeof entry.windows[0].activate === "function")
       entry.windows[0].activate()
@@ -140,6 +164,7 @@ Rectangle {
     spacing: 3
 
     Repeater {
+      id: pinnedRepeater
       model: root.pinnedEntries
       DockIcon {
         required property var modelData
@@ -151,6 +176,7 @@ Rectangle {
         magnifyScale: root.magnifyFor(index, this)
         indicatorStyle: root.runningIndicator
         pinned: modelData.pinned
+        onReorderDropped: function(entry, position) { root.reorderPinned(entry, position) }
         profileId: familiar.profileId
         motionScale: familiar.motionScale
         onActivated: root.activate(entry)

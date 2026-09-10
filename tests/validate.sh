@@ -120,6 +120,21 @@ if grep -Fq -- 'applyHypr("' "$ROOT/Service.qml" "$ROOT/Overlay.qml"; then
   exit 1
 fi
 
+assert_contains Service.qml 'readonly property var pinnedIds:'
+assert_contains Service.qml 'var configured = barConfig.dockPinned'
+assert_contains Service.qml 'typeof shell.mutateShellConfig === "function"'
+assert_contains Service.qml 'shell.mutateShellConfig(mutate)'
+assert_contains Service.qml 'barConfig = Object.assign({}, barConfig, { dockPinned: value })'
+assert_contains Service.qml 'jq --arg pins'
+assert_contains Service.qml '.bar.dockPinned = $pins'
+assert_contains Service.qml 'familiar-persist-pins'
+assert_contains Overlay.qml 'pinned: root.service ? root.service.pinnedIds : []'
+assert_contains ui/dock/DockHost.qml 'property var pinned: service ? service.pinnedIds : []'
+assert_contains ui/dock/DockHost.qml 'pinned: host.pinned'
+assert_contains ui/dock/DockIcon.qml 'root.pinned && pressed && (pressedButtons & Qt.LeftButton)'
+assert_contains ui/dock/DockIcon.qml 'Qt.styleHints.startDragDistance'
+assert_contains ui/dock/DockIcon.qml 'if (reorderGesture) return'
+node "$ROOT/tests/dock.js"
 node "$ROOT/tests/security.js"
 
 mapfile -t qml_files < <(find "$ROOT" -type f -name '*.qml' -not -path '*/.git/*' | sort)

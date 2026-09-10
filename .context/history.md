@@ -226,3 +226,17 @@
 **Files:** ui/bar/NotificationsIndicator.qml, tests/validate.sh, .context/history.md, .context/.active-agent.
 **Tests:** tests/validate.sh exit 0 (QML lint warnings); tests/hypr.sh exit 0 (Hypr writer tests passed); git diff --check passed.
 **Assumptions:** Supplied history-file evidence and WidgetButton onBarChanged registration contract are authoritative; live click verification remains for Sonic/Tux. No network, live plugin copy, restart, commit, push, merge, or branch switch. Existing context edits preserved; active-agent marker cleared.
+
+## [2026-09-10 16:43] Dock pin persist + reorder start
+**Agent:** Sonic → Tails (ACP codex)
+**Branch:** andy/bar-weather-bell
+**Changes:** Tux: pins do not stick; wants drag-reorder. persistPinned uses missing third-party shellConfigMutator. Dispatch Tails to persist via shell.mutateShellConfig + jq fallback, reactive pins, drag-reorder pinned tiles.
+**Commit:** pending Tails
+
+## [2026-09-10] Dock pin persistence + reorder complete
+**Agent:** Tails
+**Branch:** andy/bar-weather-bell; left uncommitted.
+**Changes:** persistPinned now updates a replacement local barConfig immediately and uses shell.mutateShellConfig first, then the registry mutator if available, then an adjacent jq tempfile + mv + reloadConfig fallback. Fallback writes queue the latest pending order. Service.pinnedIds reads barConfig/currentProfile reactively and feeds Overlay/DockHost. Pin/unpin trims IDs and strips .desktop; existing WM-class pin IDs stay intact. Only pinned DockIcon tiles support thresholded left-button reorder with moving translucent icon feedback, click suppression, pinned-center insertion, and autohide inhibition during drag. Running-only tiles and Applications remain outside reorder handling.
+**Files:** Service.qml, Overlay.qml, ui/dock/{DockHost,DockSurface,DockIcon}.qml, tests/{validate.sh,dock.js}, .context/history.md, .context/.active-agent. Existing decisions/history edits preserved.
+**Tests:** tests/validate.sh exit 0, including dock and security regression tests; git diff --check passed. Dock tests exercise mutator priority, immediate local object replacement, normalized pin/unpin, queued writes, the actual jq fallback with unusual IDs and stubbed reload IPC in a disposable repo directory, first/middle/last drops, threshold/click handling, running-only exclusion, and the repository-wide Loader implicit-size ban. QML lint reports import/type/unqualified-access warnings, including incomplete styleHints and Repeater item metadata; not live runtime proof.
+**Assumptions:** Mutators mutate the supplied config clone in place; their return values are ignored per the platform contract. Fallback ok means queued, with asynchronous failures logged. IDs retain case and WM-class spelling beyond trim/.desktop removal. Reorder follows the existing horizontal dock row and x-coordinate contract. Live pin/reorder verification remains for Sonic/Tux. Weather/bell/clock untouched; no network, live plugin copy, restart, commit, push, merge, or branch switch. Active-agent marker cleared.

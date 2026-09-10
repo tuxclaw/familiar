@@ -16,6 +16,12 @@ Item {
   property string profile: "gnome"
   readonly property var currentProfile: profiles[profile] || profiles.gnome || ({})
   property var barConfig: ({})
+  readonly property var pinnedIds: {
+    var configured = barConfig.dockPinned
+    var dock = currentProfile.dock || ({})
+    return normalizePinned(typeof configured === "string" ? configured.split(",") : dock.pinned)
+  }
+  property var pendingPinned: null
   property string lastHyprResult: "idle"
 
   signal profileApplied(string profileId)
@@ -72,26 +78,54 @@ Item {
     return value === undefined || value === "auto" ? profileValue : value
   }
 
-  function pinnedApps() {
-    var configured = barConfig.dockPinned
-    if (typeof configured === "string") {
-      return configured.split(",").map(function(id) { return id.trim() })
-        .filter(function(id) { return id.length > 0 })
-    }
-    var dock = currentProfile.dock || ({})
-    return Array.isArray(dock.pinned) ? dock.pinned.slice() : []
+  function normalizePinned(list) {
+    return Array.isArray(list) ? list.map(function(id) {
+      return String(id || "").trim().replace(/\.desktop$/, "")
+    }).filter(function(id, index, ids) { return id.length > 0 && ids.indexOf(id) === index }) : []
   }
 
   function persistPinned(list) {
-    var pins = Array.isArray(list) ? list.map(function(id) { return String(id).trim() })
-      .filter(function(id) { return id.length > 0 }) : []
-    if (!pluginRegistry || typeof pluginRegistry.shellConfigMutator !== "function")
-      return "unavailable"
-    pluginRegistry.shellConfigMutator(function(config) {
+    var value = normalizePinned(list).join(",")
+    // Replace the var object to notify every overlay, including other screens.
+    barConfig = Object.assign({}, barConfig, { dockPinned: value })
+    var mutate = function(config) {
       if (!config.bar) config.bar = {}
-      config.bar.dockPinned = pins.join(",")
-    })
+      config.bar.dockPinned = value
+    }
+    try {
+      if (shell && typeof shell.mutateShellConfig === "function") {
+        shell.mutateShellConfig(mutate)
+        return "ok"
+      }
+      if (pluginRegistry && typeof pluginRegistry.shellConfigMutator === "function") {
+        pluginRegistry.shellConfigMutator(mutate)
+        return "ok"
+      }
+    } catch (error) {
+      console.warn("Familiar: pin mutator failed: " + error)
+      return "unavailable"
+    }
+    pendingPinned = value
+    flushPinned()
     return "ok"
+  }
+
+  function flushPinned() {
+    if (pinnedPersistProcess.running || pendingPinned === null) return
+    var value = pendingPinned
+    pendingPinned = null
+    pinnedPersistProcess.command = [
+      "sh", "-c",
+      "set -eu; config=\"$HOME/.config/omarchy/shell.json\"; "
+        + "[ -f \"$config\" ] || exit 1; config_dir=${config%/*}; "
+        + "tmp=$(mktemp \"$config_dir/.shell.json.XXXXXX\"); "
+        + "trap 'rm -f -- \"$tmp\"' EXIT HUP INT TERM; "
+        + "jq --arg pins \"$1\" '.bar = (.bar // {}) | .bar.dockPinned = $pins' \"$config\" > \"$tmp\"; "
+        + "mv -f -- \"$tmp\" \"$config\"; trap - EXIT HUP INT TERM; "
+        + "omarchy-shell shell reloadConfig",
+      "familiar-persist-pins", value
+    ]
+    pinnedPersistProcess.running = true
   }
 
   function persist(profileId) {
@@ -132,6 +166,13 @@ Item {
   }
 
   Process { id: persistProcess }
+  Process {
+    id: pinnedPersistProcess
+    onExited: {
+      if (exitCode !== 0) console.warn("Familiar: pin persistence failed: " + exitCode)
+      root.flushPinned()
+    }
+  }
 
   Process {
     id: hyprProcess

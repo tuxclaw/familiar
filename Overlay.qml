@@ -110,7 +110,7 @@ Item {
     autohide: root.service
       ? root.service.resolved("dockAutohide", root.dockProfile.autohide ? "on" : "off") === "on"
       : false
-    pinned: root.service ? root.service.pinnedApps() : []
+    pinned: root.service ? root.service.pinnedIds : []
     runningIndicator: root.dockProfile.runningIndicator || "dot"
     showRunning: root.dockProfile.showRunning !== false
     onShowLauncher: root.open('{"surface":"launcher"}')

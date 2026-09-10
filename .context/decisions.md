@@ -111,3 +111,15 @@
 **Context:** WidgetButton revert still no-op. Third-party full bars get PluginFirstPartyServiceApi for `omarchy.notifications` with DND only — no `showRecentHistory`. Live proof: `omarchy-shell notifications showHistory` → `ok` and `omarchy-notifications` layers.
 **Decision:** Bell `onPressed` runs `bar.run("omarchy-shell notifications showHistory")`. Do not call `shell.firstPartyServiceFor("omarchy.notifications").showRecentHistory()`.
 **Status:** Active
+
+## [2026-09-10] Dock pin persist + reorder
+**By:** Sonic
+**Context:** Tux: pinning does nothing; wants drag-to-reorder pinned tiles. `persistPinned` only uses `pluginRegistry.shellConfigMutator`. Third-party `pluginRegistryFor` is a read-only stub with no mutator, so persist returns `unavailable`. Service `shell` is PluginShellApi with `mutateShellConfig` → `mutatePluginBarConfig`, which can write extra `bar.dockPinned`. Overlay `pinned: service.pinnedApps()` may not refresh. Pin `indexOf` is exact against mixed WM-class pins.
+**Decision:**
+- Stay on `andy/bar-weather-bell`. Tails in-repo only. No live copy, restart, commit, push, or main merge.
+- `persistPinned`: try `shell.mutateShellConfig` first (set `bar.dockPinned` comma list), then jq+reloadConfig fallback like `persist()`. Update local `barConfig.dockPinned` immediately. Keep mutator path if present.
+- Expose a reactive pinned-id list so Overlay/DockHost refresh after persist.
+- Pin/unpin compare normalized desktop ids (strip `.desktop`).
+- Drag-reorder pinned tiles only (not running-only, not Applications). Drag threshold so a click still launches. Drop insert index from pointer x vs pinned icon centers; persist the new order.
+- Still: no `kind: panel`, no Loader implicitHeight, no network, no BarIconButton.
+**Status:** Active

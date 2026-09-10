@@ -14,7 +14,7 @@ Item {
   property bool autohide: false
   property bool showRunning: true
   property string runningIndicator: "dot"
-  property var pinned: []
+  property var pinned: service ? service.pinnedIds : []
 
   signal showLauncher()
 
@@ -25,7 +25,7 @@ Item {
       id: dockWindow
       required property var modelData
       property bool menuOpen: menu.visible
-      property bool hovered: dockHover.hovered || revealHover.hovered || menuOpen
+      property bool hovered: dockHover.hovered || revealHover.hovered || menuOpen || dock.draggingPinned
       property bool autoHidden: host.autohide
       property bool dockShown: !host.autohide || !autoHidden
 
@@ -93,7 +93,8 @@ Item {
           id: menu
           anchors.bottom: dock.top
           onPinRequested: function(desktopId, pin) {
-            var next = host.pinned.slice()
+            desktopId = dock.normalize(desktopId)
+            var next = host.pinned.map(function(id) { return dock.normalize(id) })
             var index = next.indexOf(desktopId)
             if (pin && index < 0) next.push(desktopId)
             if (!pin && index >= 0) next.splice(index, 1)
