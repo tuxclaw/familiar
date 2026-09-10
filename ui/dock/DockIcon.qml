@@ -1,8 +1,8 @@
 import QtQuick
 import "../../lib/Input.js" as Input
-import QtQuick.Controls
 import Quickshell
 import qs.Commons
+import qs.Ui
 
 Item {
   id: root
@@ -91,17 +91,10 @@ Item {
     }
   }
 
-  ToolTip {
+  PanelToolTip {
     id: tooltip
     visible: iconMouse.containsMouse && text.length > 0
     text: Input.boundedText(root.tooltipText)
     delay: 500
-    contentItem: Text {
-      text: Input.boundedText(tooltip.text)
-      textFormat: Text.PlainText
-      color: Color.menu.text
-      font.family: Style.font.family
-      font.pixelSize: Style.font.body
-    }
   }
 }

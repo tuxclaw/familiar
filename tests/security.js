@@ -97,7 +97,8 @@ for (const file of ['ui/bar/ActiveAppLabel.qml', 'ui/bar/TaskButton.qml',
     assert.match(read(file), /textFormat: Text.PlainText/, file);
   }
 }
-assert.match(read('ui/dock/DockIcon.qml'), /text: Input.boundedText\(tooltip.text\)\s+textFormat: Text.PlainText/);
+assert.match(read('ui/dock/DockIcon.qml'), /PanelToolTip \{/);
+assert.match(read('ui/dock/DockIcon.qml'), /text: Input.boundedText\(root.tooltipText\)/);
 assert.equal(cleanInput.boundedText('<b>' + 'a'.repeat(1000)).length, 256);
 assert.match(read('ui/launcher/SearchField.qml'), /maximumLength: 256/);
 // Exercise the exact frecency command shipped in QML, in a disposable home.
