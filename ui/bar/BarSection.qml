@@ -107,6 +107,15 @@ Item {
 
         readonly property var activeItem: familiarLoader.item
 
+        function enforceClockFormat() {
+          var item = familiarLoader.item
+          if (!hostsStockClock || !item || !root.bar) return
+          var wanted = root.bar.clockFormat
+          if (!wanted || wanted === "auto") return
+          if (item.settings && item.settings.format === wanted) return
+          item.settings = root.clockSettings()
+        }
+
         width: activeItem && activeItem.visible ? activeItem.implicitWidth : 0
         height: root.bar.barSize
         Layout.fillHeight: true
@@ -129,7 +138,19 @@ Item {
             if ("format" in item) item.format = root.bar.clockFormat
             if ("fontFamily" in item) item.fontFamily = root.bar.fontFamily
             if (familiarSlot.hostsStockWidget) root.bar.registerHostedItem(item)
+            familiarSlot.enforceClockFormat()
           }
+        }
+
+        Connections {
+          target: familiarLoader.item
+          enabled: familiarSlot.hostsStockClock && familiarLoader.item !== null
+          function onSettingsChanged() { familiarSlot.enforceClockFormat() }
+        }
+        Connections {
+          target: root.bar
+          enabled: familiarSlot.hostsStockClock
+          function onClockFormatChanged() { familiarSlot.enforceClockFormat() }
         }
 
         MouseArea {
@@ -137,6 +158,8 @@ Item {
           acceptedButtons: Qt.AllButtons
           propagateComposedEvents: true
           onClicked: function(mouse) {
+            // Stock clock right-click walks into 24-hour presets; keep profile format.
+            if (familiarSlot.hostsStockClock && mouse.button === Qt.RightButton) return
             if (!root.bar.pressModuleClickTarget(familiarSlot, mouse.button, mouse.x, mouse.y)) mouse.accepted = false
           }
         }
