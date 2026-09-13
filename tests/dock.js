@@ -110,6 +110,12 @@ assert.deepEqual(plain(DockPins.widgetIds), allowedWidgets);
 const widgetDoc = { pins: mixed, widgets: allowedWidgets, widgetSide: 'left' };
 assert.deepEqual(plain(DockPins.document(widgetDoc)), widgetDoc);
 assert.deepEqual(plain(DockPins.document({ pins: mixed })), dockDoc(mixed));
+const sequence = values => Object.assign({ length: values.length }, values);
+assert.deepEqual(plain(DockPins.document({ pins: sequence(mixed), widgets: sequence(allowedWidgets), widgetSide: 'left' })), widgetDoc);
+for (const invalid of [null, undefined, 'abc', {}, { length: -1 }, { length: 1.5 }, { length: Infinity }, { length: 1 }]) {
+  assert.throws(() => DockPins.document({ ...widgetDoc, pins: invalid }));
+  assert.throws(() => DockPins.document({ ...widgetDoc, widgets: invalid }));
+}
 const invalidDocs = [
   { ...widgetDoc, widgets: ['omarchy.unknown'] }, { ...widgetDoc, widgets: ['../omarchy.audio'] },
   { ...widgetDoc, widgets: [42] }, { ...widgetDoc, widgets: [{}] }, { ...widgetDoc, widgets: 'omarchy.audio' },
@@ -176,8 +182,29 @@ assert.equal(facade.clickTargets.length, 0);
 assert.equal(facade.hostedStockItems.length, 0);
 // Model a QML sequence with indexed access and no Array methods.
 const pickerWarnings = [];
-const picker = vm.createContext({ service, console: { warn(message) { pickerWarnings.push(message); } } });
+const picker = vm.createContext({ DockPins, service, console: { warn(message) { pickerWarnings.push(message); } } });
 functions('ui/dock/DockWidgetPicker.qml', ['pick', 'save'], picker);
+picker.root = picker;
+picker.labels = ['Weather'];
+picker.parent = { index: 0, modelData: { invalid: 'QML model role' } };
+const widgetRows = read('ui/dock/DockWidgetPicker.qml').split('model: DockPins.widgetIds')[1].split('    Row {')[0];
+assert.doesNotMatch(widgetRows, /modelData/);
+assert.match(widgetRows, /root\.pick\(DockPins\.widgetIds\[parent\.index\]\)/);
+const pickerClick = widgetRows.match(/onClicked: ([^\n]*?) }/)[1];
+const pickerCheckmark = widgetRows.match(/text: ([^\n]*)/)[1];
+service.pendingPinned = null;
+service.writingDock = null;
+service.pinnedPersistProcess.running = false;
+service.storedPinned = sequence(mixed);
+service.storedWidgets = [];
+assert.equal(vm.runInContext(pickerCheckmark, picker), '+  Weather');
+vm.runInContext(pickerClick, picker);
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+  { pins: mixed, widgets: ['omarchy.weather'], widgetSide: 'left' });
+service.ingestPinned(service.pinnedPersistProcess.command.at(-1));
+assert.equal(vm.runInContext(pickerCheckmark, picker), '✓  Weather');
+vm.runInContext(pickerClick, picker);
+assert.deepEqual(plain(service.pendingPinned.widgets), []);
 service.pendingPinned = null;
 service.writingDock = null;
 service.pinnedPersistProcess.running = false;
@@ -206,6 +233,26 @@ try {
   const ok = (...args) => { const result = run(...args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
   assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
   assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  // Both plain arrays and QML-like sequences must reach the actual isolated writer.
+  for (const widgets of [['omarchy.weather'], sequence(['omarchy.weather'])]) {
+    service.pendingPinned = null;
+    service.writingDock = null;
+    service.pinnedPersistProcess.running = false;
+    service.storedPinned = sequence(['a', 'b']);
+    assert.equal(service.persistWidgets(widgets, 'left'), 'ok');
+    const command = Array.from(service.pinnedPersistProcess.command);
+    const result = spawnSync(command[0], command.slice(1),
+      { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    service.ingestPinned(result.stdout);
+    const expected = { pins: ['a', 'b'], widgets: ['omarchy.weather'], widgetSide: 'left' };
+    assert.deepEqual(ok('--read'), expected);
+    assert.deepEqual(JSON.parse(fs.readFileSync(pinPath, 'utf8')), expected);
+    assert.deepEqual(plain(service.storedWidgets), ['omarchy.weather']);
+    assert.equal(service.widgetSide, 'left');
+    assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  }
+  ok('--write', JSON.stringify(dockDoc(['a', 'b'])));
   // Execute the command emitted by persistWidgets, then ingest the writer response.
   service.pendingPinned = null;
   service.writingDock = null;
