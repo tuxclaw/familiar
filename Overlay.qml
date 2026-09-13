@@ -152,7 +152,7 @@ Item {
       Rectangle {
         anchors.fill: parent
         color: Color.background
-        opacity: Math.max(0, 0.72 + familiar.blurAlphaAdjustment)
+        opacity: Math.max(0, (root.surface === "overview" && overview.style === "gnome" ? 0.88 : 0.72) + familiar.blurAlphaAdjustment)
       }
 
       MouseArea {

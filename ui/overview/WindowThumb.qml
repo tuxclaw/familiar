@@ -7,6 +7,8 @@ import qs.Commons
 Rectangle {
   id: root
   required property var toplevel
+  property string style: ""
+  property int motionDuration: 100
   property bool livePreview: false
   property var service: null
   property int cornerRadius: 10
@@ -17,14 +19,30 @@ Rectangle {
 
   radius: cornerRadius
   color: Color.menu.background
-  border.color: toplevel && toplevel.activated ? Color.accent : Color.menu.border
+  border.color: root.style === "gnome" && pointer.hovered ? Color.accent : toplevel && toplevel.activated ? Color.accent : Color.menu.border
   border.width: toplevel && toplevel.activated ? 3 : 1
-  clip: true
+  clip: root.style !== "gnome"
+  scale: root.style === "gnome" && pointer.hovered ? 1.025 : 1
+  Behavior on scale { enabled: root.style === "gnome"; NumberAnimation { duration: root.motionDuration; easing.type: Easing.OutCubic } }
+
+  Repeater {
+    model: root.style === "gnome" ? 3 : 0
+    Rectangle {
+      required property int index
+      z: -1
+      x: -2 - index * 3; y: 4 + index
+      width: root.width + 4 + index * 6; height: root.height + 4 + index * 3
+      radius: root.cornerRadius + index * 3
+      color: Color.background
+      opacity: 0.16 / (index + 1)
+    }
+  }
 
   ScreencopyView {
     id: preview
     anchors.fill: parent
-    anchors.margins: root.border.width
+    anchors.margins: root.style === "gnome" ? 8 : root.border.width
+    anchors.bottomMargin: root.style === "gnome" ? 44 : root.border.width
     captureSource: root.livePreview ? root.toplevel : null
     live: false
     paintCursor: false
@@ -40,7 +58,8 @@ Rectangle {
 
   Rectangle {
     anchors.fill: parent
-    anchors.margins: root.border.width
+    anchors.margins: root.style === "gnome" ? 8 : root.border.width
+    anchors.bottomMargin: root.style === "gnome" ? 44 : root.border.width
     visible: !preview.hasContent
     color: Color.background
     Image {
@@ -55,9 +74,9 @@ Rectangle {
   }
 
   Rectangle {
-    visible: pointer.hovered
-    anchors { left: parent.left; right: closeButton.left; bottom: parent.bottom; margins: 10; rightMargin: 6 }
-    height: titleText.implicitHeight + 12
+    visible: root.style === "gnome" || pointer.hovered
+    anchors { left: parent.left; right: root.style === "gnome" ? parent.right : closeButton.left; bottom: parent.bottom; margins: 10; rightMargin: 6 }
+    height: root.style === "gnome" ? 28 : titleText.implicitHeight + 12
     radius: 6
     color: Color.menu.background
     opacity: 0.94

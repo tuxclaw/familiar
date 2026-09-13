@@ -72,6 +72,45 @@ assert_contains ui/bar/ActivitiesButton.qml 'WidgetButton {'
 assert_contains ui/bar/ActivitiesButton.qml 'Qt.resolvedUrl("../../assets/omarchy-logo.svg")'
 assert_contains ui/bar/ActivitiesButton.qml 'labelVisible: false'
 assert_contains ui/bar/ActivitiesButton.qml 'text: " "'
+assert_contains ui/bar/ActivitiesButton.qml 'fixedWidth: root.style === "gnome" ? 44 : 27'
+# Activities chrome stays scoped to GNOME; other overview styles retain their layout.
+assert_contains ui/overview/OverviewSurface.qml 'visible: root.style !== "gnome"'
+assert_contains ui/overview/OverviewSurface.qml 'visible: root.style === "gnome"'
+assert_contains ui/overview/OverviewSurface.qml 'style: root.style'
+assert_contains ui/overview/WorkspaceStrip.qml 'visible: root.style === "gnome"'
+assert_contains ui/overview/WindowThumb.qml 'model: root.style === "gnome" ? 3 : 0'
+assert_contains ui/overview/WindowThumb.qml 'visible: root.style === "gnome" || pointer.hovered'
+assert_contains ui/overview/WindowThumb.qml 'text: Input.boundedText('
+assert_contains ui/overview/WindowThumb.qml 'textFormat: Text.PlainText'
+assert_contains Overlay.qml 'root.surface === "overview" && overview.style === "gnome" ? 0.88 : 0.72'
+node - "$ROOT" <<'JS'
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert/strict');
+const rootPath = process.argv[2];
+const button = fs.readFileSync(rootPath + '/ui/bar/ActivitiesButton.qml', 'utf8');
+const handler = button.match(/onPressed: function\(button\) \{([\s\S]*)\n  \}\n\}/)[1];
+const calls = [];
+const root = {style: 'gnome', bar: {manifest: {id: 'familiar'}, shell: {summon: (...args) => calls.push(args)}}};
+const ctx = {root, button: 1, Qt: {LeftButton: 1, RightButton: 2},
+  profileMenu: {open: () => calls.push('profile')}, pressFeedback: {restart() {}}};
+const click = new vm.Script('(function(button) {' + handler + '})(button)');
+click.runInNewContext(ctx);
+assert.deepEqual(calls.splice(0), [['familiar', '{"surface":"overview"}']]);
+ctx.button = 2;
+click.runInNewContext(ctx);
+assert.deepEqual(calls.splice(0), ['profile']);
+ctx.button = 4;
+click.runInNewContext(ctx);
+assert.equal(calls.length, 0);
+root.bar = null;
+ctx.button = 1;
+click.runInNewContext(ctx);
+const overview = fs.readFileSync(rootPath + '/ui/overview/OverviewSurface.qml', 'utf8');
+assert.match(overview, /livePreview: parent\.index < 12/);
+assert.equal(fs.readFileSync(rootPath + '/ui/overview/WorkspaceStrip.qml', 'utf8').includes('ScreencopyView {'), false);
+console.log('Activities left/right click, missing host, and preview cap checks passed');
+JS
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
 for button in ActivitiesButton AppMenuButton; do
   assert_contains "ui/bar/$button.qml" 'onPressed: function(button)'
