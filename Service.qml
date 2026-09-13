@@ -16,12 +16,10 @@ Item {
   property string profile: "gnome"
   readonly property var currentProfile: profiles[profile] || profiles.gnome || ({})
   property var barConfig: ({})
-  readonly property var pinnedIds: {
-    var configured = barConfig.dockPinned
-    var dock = currentProfile.dock || ({})
-    return normalizePinned(typeof configured === "string" ? configured.split(",") : dock.pinned)
-  }
+  property var storedPinned: []
+  readonly property var pinnedIds: storedPinned
   property var pendingPinned: null
+
   property string lastHyprResult: "idle"
 
   signal profileApplied(string profileId)
@@ -79,53 +77,42 @@ Item {
   }
 
   function normalizePinned(list) {
-    return Array.isArray(list) ? list.map(function(id) {
+    return Array.isArray(list) ? list.filter(function(id) { return typeof id === "string" }).map(function(id) {
       return String(id || "").trim().replace(/\.desktop$/, "")
     }).filter(function(id, index, ids) { return id.length > 0 && ids.indexOf(id) === index }) : []
   }
 
   function persistPinned(list) {
-    var value = normalizePinned(list).join(",")
-    // Replace the var object to notify every overlay, including other screens.
-    barConfig = Object.assign({}, barConfig, { dockPinned: value })
-    var mutate = function(config) {
-      if (!config.bar) config.bar = {}
-      config.bar.dockPinned = value
-    }
-    try {
-      if (shell && typeof shell.mutateShellConfig === "function") {
-        shell.mutateShellConfig(mutate)
-        return "ok"
-      }
-      if (pluginRegistry && typeof pluginRegistry.shellConfigMutator === "function") {
-        pluginRegistry.shellConfigMutator(mutate)
-        return "ok"
-      }
-    } catch (error) {
-      console.warn("Familiar: pin mutator failed: " + error)
-      return "unavailable"
-    }
-    pendingPinned = value
+    if (arguments.length !== 1 || !Array.isArray(list)
+        || list.some(function(id) { return typeof id !== "string" })) return "refused"
+    pendingPinned = normalizePinned(list)
     flushPinned()
     return "ok"
   }
 
   function flushPinned() {
-    if (pinnedPersistProcess.running || pendingPinned === null) return
-    var value = pendingPinned
-    pendingPinned = null
-    pinnedPersistProcess.command = [
-      "sh", "-c",
-      "set -eu; config=\"$HOME/.config/omarchy/shell.json\"; "
-        + "[ -f \"$config\" ] || exit 1; config_dir=${config%/*}; "
-        + "tmp=$(mktemp \"$config_dir/.shell.json.XXXXXX\"); "
-        + "trap 'rm -f -- \"$tmp\"' EXIT HUP INT TERM; "
-        + "jq --arg pins \"$1\" '.bar = (.bar // {}) | .bar.dockPinned = $pins' \"$config\" > \"$tmp\"; "
-        + "mv -f -- \"$tmp\" \"$config\"; trap - EXIT HUP INT TERM; "
-        + "omarchy-shell shell reloadConfig",
-      "familiar-persist-pins", value
-    ]
+    if (pinnedPersistProcess.running) return
+    var writerUrl = Qt.resolvedUrl("lib/dock-pins.py").toString()
+    var writerPath = writerUrl.indexOf("file://") === 0 ? writerUrl.slice(7) : writerUrl
+    var command = ["python3", writerPath]
+    if (pendingPinned !== null) {
+      command.push("--write", JSON.stringify({ pins: pendingPinned }))
+      pendingPinned = null
+    } else command.push("--read")
+    pinnedPersistProcess.command = command
     pinnedPersistProcess.running = true
+  }
+
+  function ingestPinned(contents) {
+    try {
+      var data = JSON.parse(contents)
+      if (!Array.isArray(data.pins) || data.pins.some(function(id) { return typeof id !== "string" }))
+        throw new Error("invalid pins")
+      var next = normalizePinned(data.pins)
+      if (JSON.stringify(next) !== JSON.stringify(storedPinned)) storedPinned = next
+    } catch (error) {
+      console.warn("Familiar: unable to read dock pins: " + error)
+    }
   }
 
   function persist(profileId) {
@@ -165,12 +152,17 @@ Item {
     return "started"
   }
 
+  Component.onCompleted: flushPinned()
+  Timer { interval: 1000; running: true; repeat: true; onTriggered: root.flushPinned() }
+
   Process { id: persistProcess }
   Process {
     id: pinnedPersistProcess
+    stdout: StdioCollector { id: pinnedStdout; waitForEnd: true }
     onExited: {
       if (exitCode !== 0) console.warn("Familiar: pin persistence failed: " + exitCode)
-      root.flushPinned()
+      else root.ingestPinned(pinnedStdout.text)
+      if (root.pendingPinned !== null) root.flushPinned()
     }
   }
 

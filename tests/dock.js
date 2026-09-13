@@ -9,52 +9,78 @@ function functions(file, names, context) {
   for (const name of names)
     vm.runInContext(read(file).match(new RegExp('  function ' + name + '\\([^]*?^  }', 'm'))[0], context);
 }
-const service = vm.createContext({ barConfig: { profile: 'macos' }, shell: null,
-  pluginRegistry: null, pendingPinned: null, pinnedPersistProcess: { running: false }, console });
-functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned'], service);
-let shellCalls = 0;
-let registryCalls = 0;
-let config = {};
-service.shell = { mutateShellConfig(fn) { shellCalls++; fn(config); } };
-service.pluginRegistry = { shellConfigMutator(fn) { registryCalls++; fn(config); } };
-const previous = service.barConfig;
-assert.equal(service.persistPinned([' md.obsidian.Obsidian.desktop ', 'md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default', '']), 'ok');
-assert.equal(config.bar.dockPinned, 'md.obsidian.Obsidian,chrome-127.0.0.1__-Default');
-assert.equal(service.barConfig.dockPinned, config.bar.dockPinned);
-assert.notEqual(service.barConfig, previous);
-assert.equal(service.barConfig.profile, 'macos');
-assert.equal(shellCalls, 1);
-assert.equal(registryCalls, 0);
-service.shell = {};
-assert.equal(service.persistPinned([]), 'ok');
-assert.equal(config.bar.dockPinned, '');
-assert.equal(registryCalls, 1);
-service.pluginRegistry = {}; // Actual third-party registry: no mutator.
-const unusual = 'app$(touch sentinel)`id`"';
-assert.equal(service.persistPinned([unusual]), 'ok');
+const service = vm.createContext({ storedPinned: [], pendingPinned: null,
+  pinnedPersistProcess: { running: false }, Qt: { resolvedUrl: () => path.join(root, 'lib/dock-pins.py') }, console });
+functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned', 'ingestPinned'], service);
+assert.equal(service.persistPinned([42]), 'refused');
+assert.equal(service.persistPinned([], '/tmp/elsewhere'), 'refused');
+assert.equal(service.persistPinned([' a.desktop ', 'a', 'b']), 'ok');
 const command = Array.from(service.pinnedPersistProcess.command);
-assert.equal(service.pinnedPersistProcess.running, true);
+assert.deepEqual(JSON.parse(command.at(-1)), { pins: ['a', 'b'] });
 service.persistPinned(['later.desktop']);
-assert.equal(service.pendingPinned, 'later');
+assert.deepEqual(Array.from(service.pendingPinned), ['later']);
 assert.deepEqual(Array.from(service.pinnedPersistProcess.command), command);
 service.pinnedPersistProcess.running = false;
 service.flushPinned();
-assert.equal(service.pinnedPersistProcess.command.at(-1), 'later');
-// Execute the shipped fallback only in a disposable repo directory, with IPC stubbed.
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)), { pins: ['later'] });
+service.ingestPinned('{"pins":["a.desktop","b"]}');
+assert.deepEqual(Array.from(service.storedPinned), ['a', 'b']);
+const previous = service.storedPinned;
+service.ingestPinned('{"pins":["changed"]}');
+assert.notEqual(service.storedPinned, previous);
+assert.doesNotMatch(read('Service.qml'), /config\.bar\.dockPinned\s*=/);
 const temp = fs.mkdtempSync(path.join(root, 'tests/.dock-test-'));
 try {
   const dir = path.join(temp, '.config/omarchy');
   fs.mkdirSync(dir, { recursive: true });
-  fs.mkdirSync(path.join(temp, 'bin'));
-  fs.writeFileSync(path.join(temp, 'bin/omarchy-shell'), '#!/bin/sh\n[ "$1" = shell ] && [ "$2" = reloadConfig ] || exit 1\nprintf reloaded > "$HOME/reloaded"\n', { mode: 0o755 });
-  fs.writeFileSync(path.join(dir, 'shell.json'), JSON.stringify({ bar: { profile: 'macos' }, extra: 42 }));
-  const result = spawnSync(command[0], command.slice(1), { cwd: temp, env: { ...process.env, HOME: temp, PATH: path.join(temp, 'bin') + ':' + process.env.PATH } });
-  assert.equal(result.status, 0, String(result.stderr));
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'shell.json'))), { bar: { profile: 'macos', dockPinned: unusual }, extra: 42 });
-  assert.equal(fs.readFileSync(path.join(temp, 'reloaded'), 'utf8'), 'reloaded');
+  const shellPath = path.join(dir, 'shell.json');
+  const pinPath = path.join(dir, 'familiar-dock.json');
+  const legacy = JSON.stringify({ bar: { dockPinned: ' a.desktop,b,a ' }, extra: 42 });
+  fs.writeFileSync(shellPath, legacy);
+  const run = (...args) => spawnSync('python3', [path.join(root, 'lib/dock-pins.py'), ...args],
+    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+  const ok = (...args) => { const result = run(...args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
+  assert.deepEqual(ok('--read'), { pins: ['a', 'b'] });
+  assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  fs.writeFileSync(shellPath, '{"bar":{"dockPinned":"different"}}');
+  assert.deepEqual(ok('--read'), { pins: ['a', 'b'] });
+  const unusual = 'app$(touch sentinel)`id`"';
+  const oldFd = fs.openSync(pinPath, 'r');
+  assert.deepEqual(ok('--write', JSON.stringify({ pins: [unusual] })), { pins: [unusual] });
+  assert.deepEqual(JSON.parse(fs.readFileSync(oldFd)), { pins: ['a', 'b'] }); // Atomic replacement.
+  fs.closeSync(oldFd);
+  assert.deepEqual(JSON.parse(fs.readFileSync(pinPath)), { pins: [unusual] });
   assert.equal(fs.existsSync(path.join(temp, 'sentinel')), false);
-  assert.deepEqual(fs.readdirSync(dir), ['shell.json']);
+  ok('--write', '{"pins":[]}');
+  assert.deepEqual(ok('--read'), { pins: [] }); // Empty pins do not migrate again.
+  for (const data of ['{"pins":[1]}', '{"pins":[{}]}', '{"pins":"a"}', '{"pins":[],"path":"x"}'])
+    assert.notEqual(run('--write', data).status, 0);
+  assert.notEqual(run('--read', pinPath).status, 0);
+  fs.writeFileSync(pinPath, 'broken');
+  assert.notEqual(run('--read').status, 0);
+  assert.equal(fs.readFileSync(pinPath, 'utf8'), 'broken');
+  fs.unlinkSync(pinPath);
+  fs.symlinkSync(shellPath, pinPath);
+  assert.notEqual(run('--read').status, 0);
+  assert.notEqual(run('--write', '{"pins":[]}').status, 0);
+  assert.equal(fs.readFileSync(shellPath, 'utf8'), '{"bar":{"dockPinned":"different"}}');
+  fs.unlinkSync(pinPath);
+  fs.symlinkSync(path.join(dir, 'missing'), pinPath);
+  assert.notEqual(run('--write', '{"pins":[]}').status, 0);
 } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+const dockHost = read('ui/dock/DockHost.qml');
+assert.match(dockHost, /WlrLayershell.layer: host.autohide \? WlrLayer.Overlay : WlrLayer.Top/);
+assert.match(dockHost, /visible: dockShown/); // Unmapped dock cannot intercept fullscreen clicks.
+assert.match(dockHost, /namespace: "familiar-dock-edge"/);
+assert.match(dockHost, /visible: host.autohide/);
+assert.match(dockHost, /onHoveredChanged: if \(hovered\) dockWindow.autoHidden = false/);
+assert.equal((dockHost.match(/PanelWindow \{/g) || []).length, 2);
+assert.doesNotMatch(dockHost, /screen\.(width|height)|revealStrip/);
+const edge = dockHost.slice(dockHost.indexOf('id: edgeWindow'));
+assert.match(edge, /exclusiveZone: 0/);
+assert.match(edge, /exclusionMode: ExclusionMode.Ignore/);
+assert.match(edge, /implicitWidth: host.position === "bottom" \? dockWindow.implicitWidth : 2/);
+assert.match(edge, /implicitHeight: host.position === "bottom" \? 2 : dockWindow.implicitHeight/);
 const surface = vm.createContext({ pinned: [' a.desktop ', 'b', 'c'], service: { persistPinned(list) { surface.saved = Array.from(list); } },
   pinnedRepeater: { count: 3, itemAt(i) { return { entry: { pinId: ['a', 'b', 'c'][i] }, width: 48, height: 60, mapToItem() { return { x: 30 + 60 * i }; } }; } } });
 surface.root = surface;
@@ -70,7 +96,7 @@ surface.reorderPinned({ pinned: false, desktopId: 'running' }, { x: 0 });
 assert.equal(surface.saved, null);
 // Pin/unpin uses normalized original pin IDs, including WM-class pins.
 const host = vm.createContext({ host: { pinned: [' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], service: { persistPinned(list) { host.saved = Array.from(list); } } }, dock: surface });
-vm.runInContext('var pin = ' + read('ui/dock/DockHost.qml').match(/onPinRequested: (function\([^]*?^          })/m)[1], host);
+vm.runInContext('var pin = ' + read('ui/dock/DockHost.qml').match(/onPinRequested: (function\([^]*?^\s+})/m)[1], host);
 host.pin('md.obsidian.Obsidian', true);
 assert.deepEqual(host.saved, ['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default']);
 host.pin(' md.obsidian.Obsidian.desktop ', false);
