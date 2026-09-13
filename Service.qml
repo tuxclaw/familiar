@@ -96,11 +96,12 @@ Item {
   }
 
   function persistWidgets(widgets, side) {
-    if (arguments.length !== 2) return "refused"
     try {
       var base = pendingPinned || writingDock || { pins: storedPinned }
       pendingPinned = DockPins.document({ pins: base.pins, widgets: widgets, widgetSide: side })
     } catch (error) { return "refused" }
+    storedWidgets = pendingPinned.widgets
+    widgetSide = pendingPinned.widgetSide
     flushPinned()
     return "ok"
   }

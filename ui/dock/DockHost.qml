@@ -74,7 +74,6 @@ Item {
         DockWidgetBar {
           id: dockWidgetBar
           hostShell: host.shell
-          pluginRegistry: host.service ? host.service.pluginRegistry : null
           barWidgetRegistry: host.shell && host.shell.bar ? host.shell.bar.barWidgetRegistry || null : null
           barConfig: host.service ? host.service.barConfig : ({})
           position: host.position

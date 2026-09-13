@@ -18,7 +18,6 @@ Item {
       for (var i = 0; i < items.length; i++) items[i].settings = Object.assign({}, settings)
     }
   }
-  property var pluginRegistry: null
   property var barConfig: ({})
   property var barWidgetRegistry: null
   property string position: "bottom"

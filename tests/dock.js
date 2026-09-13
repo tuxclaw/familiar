@@ -155,14 +155,22 @@ for (const data of invalidDocs) assert.throws(() => DockPins.document(data));
 service.pinnedPersistProcess.running = false;
 service.pendingPinned = null;
 service.writingDock = null;
-service.persistWidgets(['omarchy.audio'], 'left');
+assert.equal(service.persistWidgets(['omarchy.audio'], 'left'), 'ok');
+assert.deepEqual(plain(service.storedWidgets), ['omarchy.audio']);
+assert.equal(service.widgetSide, 'left');
 assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input),
   { pins: ['changed'], widgets: ['omarchy.audio'], widgetSide: 'left' });
 service.persistPinned(mixed);
 service.persistWidgets(allowedWidgets, 'right');
 assert.deepEqual(plain(service.pendingPinned), { pins: mixed, widgets: allowedWidgets, widgetSide: 'right' });
+assert.deepEqual(plain(service.storedWidgets), allowedWidgets, 'queued changes are visible immediately');
+assert.equal(service.widgetSide, 'right');
 for (const data of invalidDocs.slice(0, 7)) assert.equal(service.persistWidgets(data.widgets, data.widgetSide), 'refused');
-assert.equal(service.persistWidgets([], 'left', '/tmp/elsewhere'), 'refused');
+assert.deepEqual(plain(service.storedWidgets), allowedWidgets, 'invalid changes preserve optimistic state');
+assert.equal(service.widgetSide, 'right');
+assert.equal(service.persistWidgets([], 'left', '/tmp/elsewhere'), 'ok');
+assert.deepEqual(plain(service.pendingPinned), { pins: mixed, widgets: [], widgetSide: 'left' });
+assert.doesNotMatch(service.persistWidgets.toString(), /arguments\.length/);
 service.ingestPinned(JSON.stringify(widgetDoc));
 assert.deepEqual(plain(service.storedWidgets), allowedWidgets);
 assert.equal(service.widgetSide, 'left');
@@ -174,8 +182,8 @@ assert.equal(JSON.stringify([service.storedPinned, service.storedWidgets, servic
 service.console = originalConsole;
 const hosted = vm.createContext({ DockPins, bar: { barWidgetRegistry: { revision: 1,
   widgets: { 'omarchy.audio': { component: 'stock-component' } } },
-  pluginRegistry: { installedPlugins: { 'omarchy.audio': { id: 'omarchy.audio' } },
-    entryPointUrl(manifest, kind) { assert.equal(kind, 'barWidget'); return manifest.id + '/Widget.qml'; } },
+  hostShell: { pluginRegistry: { installedPlugins: { 'omarchy.audio': { id: 'omarchy.audio' } },
+    entryPointUrl(manifest, kind) { assert.equal(kind, 'barWidget'); return manifest.id + '/Widget.qml'; } } },
   barConfig: { layout: { right: [{ id: 'omarchy.audio', example: true }] } } } });
 functions('ui/dock/DockWidgetCluster.qml', ['widgetComponent', 'widgetUrl', 'widgetSettings'], hosted);
 assert.equal(hosted.widgetComponent('omarchy.audio'), 'stock-component');
@@ -190,10 +198,37 @@ for (const registry of [{}, { widgets: {} }, { widgets: { 'omarchy.audio': {} } 
 hosted.bar.barWidgetRegistry = null;
 assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
 assert.equal(hosted.widgetUrl('omarchy.unknown'), '');
-assert.equal(hosted.widgetUrl('omarchy.clock'), '');
+const stockUrl = id => 'file:///usr/share/omarchy/shell/plugins/panels/' + id.slice(8)
+  + (['omarchy.clock', 'omarchy.weather'].includes(id) ? '/BarWidget.qml' : '/Panel.qml');
+assert.equal(hosted.widgetUrl('omarchy.clock'), stockUrl('omarchy.clock'));
+const shellRegistry = hosted.bar.hostShell.pluginRegistry;
+hosted.bar.hostShell = null;
+hosted.bar.shell = { pluginRegistry: shellRegistry };
+assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
+// A service/direct proxy registry must never supply the source.
+hosted.bar.pluginRegistry = { installedPlugins: shellRegistry.installedPlugins,
+  entryPointUrl() { throw new Error('wrong registry'); } };
+for (const registry of [null, {}, { installedPlugins: shellRegistry.installedPlugins },
+  { installedPlugins: shellRegistry.installedPlugins, entryPointUrl() { return ''; } }]) {
+  hosted.bar.shell = { pluginRegistry: registry };
+  for (const id of allowedWidgets)
+    assert.equal(hosted.widgetUrl(id), id === 'omarchy.microphone' ? '' : stockUrl(id));
+  for (const id of ['omarchy.unknown', '../audio', 'omarchy.audio/../../evil', 'file:///tmp/evil.qml', '__proto__'])
+    assert.equal(hosted.widgetUrl(id), '');
+}
+hosted.bar.hostShell = { pluginRegistry: shellRegistry };
+assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
+assert.doesNotMatch(read('ui/dock/DockHost.qml'), /service\.pluginRegistry/);
+for (const file of ['ui/dock/DockWidgetCluster.qml', 'ui/dock/DockWidgetBar.qml', 'ui/dock/DockHost.qml'])
+  assert.doesNotMatch(read(file), /shellConfigMutator|shell\.json|kind\s*:\s*["']panel["']|omarchy-menu/);
+const layoutBefore = JSON.stringify(hosted.bar.barConfig.layout);
+Object.freeze(hosted.bar.barConfig.layout.right[0]);
+Object.freeze(hosted.bar.barConfig.layout.right);
+Object.freeze(hosted.bar.barConfig.layout);
 const settingsCopy = hosted.widgetSettings('omarchy.audio');
 settingsCopy.example = false;
 assert.equal(hosted.bar.barConfig.layout.right[0].example, true);
+assert.equal(JSON.stringify(hosted.bar.barConfig.layout), layoutBefore);
 const facade = vm.createContext({ clickTargets: [], hostedStockItems: [], activePopout: null });
 functions('ui/dock/DockWidgetBar.qml', ['registerHostedItem', 'unregisterHostedItem', 'registerClickTarget',
   'unregisterClickTarget', 'moduleTargetClickable', 'moduleClickTargetAt', 'pressModuleClickTarget',
@@ -326,6 +361,8 @@ finally:
     service.pinnedPersistProcess.running = false;
     service.storedPinned = sequence(['a', 'b']);
     assert.equal(service.persistWidgets(widgets, 'left'), 'ok');
+    assert.deepEqual(plain(service.storedWidgets), ['omarchy.weather']);
+    assert.equal(service.widgetSide, 'left');
     const command = Array.from(service.pinnedPersistProcess.command);
     const result = spawnSync(command[0], command.slice(1),
       { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8', timeout: 5000, input: service.pinnedPersistProcess.input });

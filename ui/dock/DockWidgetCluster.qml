@@ -18,10 +18,25 @@ Row {
 
   function widgetUrl(id) {
     if (DockPins.widgetIds.indexOf(id) < 0 || !bar || widgetComponent(id)) return ""
-    var registry = bar.pluginRegistry
+    var registry = bar.hostShell && bar.hostShell.pluginRegistry
+      ? bar.hostShell.pluginRegistry : (bar.shell ? bar.shell.pluginRegistry : null)
     var manifest = registry && registry.installedPlugins ? registry.installedPlugins[id] : null
-    return manifest && typeof registry.entryPointUrl === "function"
-      ? registry.entryPointUrl(manifest, "barWidget") : ""
+    if (manifest && typeof registry.entryPointUrl === "function") {
+      var source = registry.entryPointUrl(manifest, "barWidget")
+      if (source) return source
+    }
+    // Fixed stock paths only; microphone requires a registered widget.
+    var fallback = {
+      "omarchy.weather": "file:///usr/share/omarchy/shell/plugins/panels/weather/BarWidget.qml",
+      "omarchy.clock": "file:///usr/share/omarchy/shell/plugins/panels/clock/BarWidget.qml",
+      "omarchy.audio": "file:///usr/share/omarchy/shell/plugins/panels/audio/Panel.qml",
+      "omarchy.bluetooth": "file:///usr/share/omarchy/shell/plugins/panels/bluetooth/Panel.qml",
+      "omarchy.network": "file:///usr/share/omarchy/shell/plugins/panels/network/Panel.qml",
+      "omarchy.power": "file:///usr/share/omarchy/shell/plugins/panels/power/Panel.qml",
+      "omarchy.monitor": "file:///usr/share/omarchy/shell/plugins/panels/monitor/Panel.qml",
+      "omarchy.tailscale": "file:///usr/share/omarchy/shell/plugins/panels/tailscale/Panel.qml"
+    }
+    return fallback[id] || ""
   }
 
   function widgetSettings(id) {
