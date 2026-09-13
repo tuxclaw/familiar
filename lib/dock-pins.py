@@ -7,7 +7,8 @@ import re
 from pathlib import Path
 import stat
 import sys
-import tempfile
+import secrets
+from contextlib import contextmanager
 
 MAX_STDIN_BYTES = 1024 * 1024
 
@@ -61,8 +62,43 @@ def validate(data):
     return {"pins": pins, "widgets": list(dict.fromkeys(widgets)), "widgetSide": side}
 
 
-def read_json(path):
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+@contextmanager
+def config_directory():
+    # Anchor each component before traversing the next: renames cannot redirect
+    # later storage operations, and no component may be a symlink.
+    directory = Path.home() / ".config" / "omarchy"
+    if not directory.is_absolute() or ".." in directory.parts:
+        raise ValueError("invalid home directory")
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    fd = os.open("/", flags)
+    try:
+        for component in directory.parts[1:]:
+            try:
+                child = os.open(component, flags, dir_fd=fd)
+            except FileNotFoundError:
+                try:
+                    os.mkdir(component, 0o700, dir_fd=fd)
+                except FileExistsError:
+                    pass
+                child = os.open(component, flags, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        yield fd
+    finally:
+        os.close(fd)
+
+
+def refuse_symlink(directory_fd, name):
+    try:
+        info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if stat.S_ISLNK(info.st_mode):
+        raise ValueError("refusing symlink pin file")
+
+
+def read_json(directory_fd, name):
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
     with os.fdopen(fd) as stream:
         if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
             raise ValueError("refusing non-regular file")
@@ -80,28 +116,32 @@ def run(args):
     else:
         raise ValueError("expected only --read or --write")
 
-    directory = Path.home() / ".config" / "omarchy"
-    for parent in reversed([directory, *directory.parents]):
-        if parent.is_symlink():
-            raise ValueError("refusing symlink directory")
-    directory.mkdir(parents=True, exist_ok=True)
-    target = directory / "familiar-dock.json"
-    lock = os.open(directory / ".familiar-dock.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with config_directory() as directory_fd:
+        return store(directory_fd, data)
+
+
+def store(directory_fd, data):
+    target = "familiar-dock.json"
+    lock = os.open(".familiar-dock.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600,
+                   dir_fd=directory_fd)
     with os.fdopen(lock, "w") as guard:
         fcntl.flock(guard, fcntl.LOCK_EX)
-        if target.is_symlink():
-            raise ValueError("refusing symlink pin file")
-        if data is None and target.exists():
-            stored = read_json(target)
-            data = validate(stored)
-            if set(stored) == {"pins", "widgets", "widgetSide"}:
-                return data
-            # Upgrade a pre-widget document using the same atomic replacement.
+        refuse_symlink(directory_fd, target)
+        if data is None:
+            try:
+                stored = read_json(directory_fd, target)
+            except FileNotFoundError:
+                pass
+            else:
+                data = validate(stored)
+                if set(stored) == {"pins", "widgets", "widgetSide"}:
+                    return data
+                # Upgrade a pre-widget document using the same atomic replacement.
 
         if data is None:
             # Only absence triggers migration. Empty or invalid existing files never do.
             try:
-                config = read_json(directory / "shell.json")
+                config = read_json(directory_fd, "shell.json")
             except FileNotFoundError:
                 config = {}
             legacy = config.get("bar", {}).get("dockPinned", "")
@@ -113,24 +153,29 @@ def run(args):
             data = validate({"pins": pins})
         temporary = None
         try:
-            fd, temporary = tempfile.mkstemp(prefix=".familiar-dock-", dir=directory)
+            for attempt in range(100):
+                candidate = ".familiar-dock-" + secrets.token_hex(16)
+                try:
+                    fd = os.open(candidate, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                 0o600, dir_fd=directory_fd)
+                except FileExistsError:
+                    continue
+                temporary = candidate
+                break
+            else:
+                raise FileExistsError("cannot create temporary file")
             with os.fdopen(fd, "w") as stream:
                 json.dump(data, stream)
                 stream.write("\n")
                 stream.flush()
                 os.fsync(stream.fileno())
-            if target.is_symlink():
-                raise ValueError("refusing symlink pin file")
-            os.replace(temporary, target)
+            refuse_symlink(directory_fd, target)
+            os.replace(temporary, target, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
             temporary = None
-            fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
-            try:
-                os.fsync(fd)
-            finally:
-                os.close(fd)
+            os.fsync(directory_fd)
         finally:
             if temporary is not None:
-                os.unlink(temporary)
+                os.unlink(temporary, dir_fd=directory_fd)
         return data
 
 
