@@ -51,7 +51,6 @@ Rectangle {
     profile: root.service ? root.service.currentProfile : ({})
   }
 
-  signal contextRequested(var entry, point position)
   signal showLauncher()
 
   function normalize(id) {
@@ -398,7 +397,6 @@ Rectangle {
           profileId: familiar.profileId
           motionScale: familiar.motionScale
           onActivated: root.activate(entry)
-          onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
         }
       }
     }
@@ -425,7 +423,6 @@ Rectangle {
         profileId: familiar.profileId
         motionScale: familiar.motionScale
         onActivated: root.activate(entry)
-        onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
       }
     }
 

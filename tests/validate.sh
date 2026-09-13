@@ -163,8 +163,6 @@ assert_contains ui/dock/DockSurface.qml 'contextMenuEnabled: false'
 assert_contains ui/dock/DockSurface.qml 'onActivated: root.showLauncher()'
 assert_contains ui/dock/DockSurface.qml 'color: Color.menu.background'
 assert_contains ui/dock/DockSurface.qml 'border.color: Color.menu.border'
-assert_contains ui/dock/DockContextMenu.qml 'Color.menu.selectedBackground'
-assert_contains ui/dock/DockContextMenu.qml 'Color.menu.text'
 assert_contains ui/dock/DockHost.qml 'signal showLauncher()'
 assert_contains ui/dock/DockHost.qml 'onShowLauncher: host.showLauncher()'
 assert_contains ui/dock/DockIcon.qml 'PanelToolTip {'
@@ -175,7 +173,6 @@ assert_contains ui/dock/DockIcon.qml 'Quickshell.iconPath(value, "application-x-
 assert_contains ui/dock/DockIcon.qml 'sourceSize.width: width * Screen.devicePixelRatio'
 assert_contains ui/dock/DockIcon.qml 'status === Image.Error'
 assert_contains ui/dock/DockIcon.qml 'value.indexOf("file://") === 0 || value.indexOf("image://") === 0'
-assert_contains ui/dock/DockContextMenu.qml 'root.entry.pinId || root.entry.desktopId'
 assert_contains Familiar.qml '["hyprctl", "-j", "getoption", "animations:enabled"]'
 assert_contains Familiar.qml 'Util.alpha(Color.foreground, 0.06)'
 assert_contains Familiar.qml 'Util.alpha(Color.foreground, 0.12)'
@@ -215,7 +212,6 @@ assert_contains ui/dock/DockSurface.qml 'DockPins.move('
 assert_contains ui/dock/DockSurface.qml 'Behavior on x'
 assert_contains ui/dock/DockFolderPopup.qml 'Behavior on y'
 assert_contains Service.qml 'return DockPins.normalize(list)'
-assert_contains ui/dock/DockContextMenu.qml '[root.pinned ? "Unpin" : "Pin", "New window", "Quit"]'
 assert_contains ui/dock/DockIcon.qml 'Qt.styleHints.startDragDistance'
 assert_contains ui/dock/DockIcon.qml 'if (reorderGesture) return'
 assert_contains ui/dock/DockWidgetCluster.qml 'registry.entryPointUrl(manifest, "barWidget")'
@@ -224,6 +220,16 @@ assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.pressModuleClickTarget(s
 assert_contains ui/dock/DockHost.qml 'shell.bar.barWidgetRegistry'
 assert_contains ui/dock/DockHost.qml 'DockWidgetPicker {'
 assert_contains Service.qml 'function persistWidgets(widgets, side)'
+# Dock icons consume RMB without opening a menu; editing remains a long press.
+if [[ -e "$ROOT/ui/dock/DockContextMenu.qml" ]] || grep -Eq 'DockContextMenu|menuOpen|[Cc]ontextRequested' "$ROOT"/ui/dock/*.qml; then
+  printf 'Removed dock context menu wiring found\n' >&2
+  exit 1
+fi
+assert_contains ui/dock/DockIcon.qml 'if (mouse.button !== Qt.LeftButton) return'
+assert_contains ui/dock/DockIcon.qml 'root.dockSurface.editMode = true'
+assert_contains ui/dock/DockIcon.qml 'if (!root.contextMenuEnabled) root.dockSurface.widgetPickerOpen = true'
+assert_contains ui/dock/DockIcon.qml 'else root.dockSurface.togglePin(root.entry)'
+
 # Includes scoped running/Applications Row-centering and shared glyph-baseline checks.
 node "$ROOT/tests/dock.js"
 node "$ROOT/tests/security.js"

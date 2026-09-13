@@ -394,7 +394,7 @@ const dockWindowSource = dockHost.slice(dockHost.indexOf('id: dockWindow'), dock
 const geometry = ['implicitWidth', 'implicitHeight'].map(name =>
   dockWindowSource.match(new RegExp('^        ' + name + ': (.*)$', 'm'))[1]);
 for (const position of ['bottom', 'left', 'right']) {
-  const context = vm.createContext({ host: { position }, menuOpen: false,
+  const context = vm.createContext({ host: { position },
     dock: { implicitWidth: 160, implicitHeight: 76, widgetPickerOpen: false, folderOpen: false } });
   const size = () => geometry.map(expression => vm.runInContext(expression, context));
   const compact = size();

@@ -28,7 +28,6 @@ Item {
 
   signal reorderDropped(var entry, point position)
   signal activated(var entry)
-  signal contextRequested(var entry, point position)
 
   function iconSource(iconName) {
     var value = String(iconName || "")
@@ -158,12 +157,9 @@ Item {
     onClicked: function(mouse) {
       if (reorderGesture) return
       if (held || moved) return
-      if (mouse.button === Qt.RightButton && root.contextMenuEnabled)
-        root.contextRequested(root.entry, mapToItem(root.dockSurface, mouse.x, mouse.y))
-      else if (mouse.button === Qt.LeftButton)
-        if (root.profileId === "macos" && root.motionScale > 0) launchBounce.restart()
-      if (mouse.button === Qt.LeftButton)
-        root.activated(root.entry)
+      if (mouse.button !== Qt.LeftButton) return
+      if (root.profileId === "macos" && root.motionScale > 0) launchBounce.restart()
+      root.activated(root.entry)
     }
   }
 

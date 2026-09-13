@@ -1,5 +1,4 @@
 import QtQuick
-import "../../lib/DockPins.js" as DockPins
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -29,8 +28,7 @@ Item {
 
       PanelWindow {
         id: dockWindow
-        property bool menuOpen: menu.visible
-        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.widgetPickerOpen || dock.editMode || dockWidgetBar.activePopout !== null
+        property bool hovered: dockHover.hovered || edgeHover.hovered || dock.draggingPinned || dock.folderOpen || dock.widgetPickerOpen || dock.editMode || dockWidgetBar.activePopout !== null
         property bool autoHidden: host.autohide
         property bool dockShown: !host.autohide || !autoHidden
 
@@ -40,7 +38,7 @@ Item {
         anchors.left: host.position === "left"
         anchors.right: host.position === "right"
         implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth) : Math.max(1, dock.implicitHeight)
-        implicitHeight: host.position === "bottom" ? dock.implicitHeight + (menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
+        implicitHeight: host.position === "bottom" ? dock.implicitHeight : Math.max(1, dock.implicitWidth)
         exclusiveZone: host.autohide ? 0 : (host.position === "bottom" ? dock.implicitHeight : dock.implicitHeight)
         exclusionMode: host.autohide ? ExclusionMode.Ignore : ExclusionMode.Auto
         color: "transparent"
@@ -101,24 +99,9 @@ Item {
             transform: Translate { y: dockWindow.dockShown ? 0 : dock.height - 2; Behavior on y { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } } }
             Behavior on opacity { NumberAnimation { duration: 120 } }
             onShowLauncher: host.showLauncher()
-            onContextRequested: function(entry, position) { menu.openFor(entry, entry.pinned, mapToItem(parent, position.x, position.y).x) }
           }
 
           HoverHandler { id: dockHover; parent: dock }
-
-          DockContextMenu {
-            id: menu
-            anchors.bottom: dock.top
-            onPinRequested: function(desktopId, pin) {
-              if (host.service) host.service.persistPinned(DockPins.toggle(host.pinned, desktopId, pin))
-            }
-            onNewWindowRequested: function(entry) { dock.launch(entry) }
-            onQuitRequested: function(entry) {
-              var windows = entry.windows || []
-              for (var i = 0; i < windows.length; i++)
-                if (typeof windows[i].close === "function") windows[i].close()
-            }
-          }
         }
       }
 

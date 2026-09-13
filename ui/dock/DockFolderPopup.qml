@@ -67,7 +67,6 @@ Rectangle {
       Behavior on x { NumberAnimation { duration: Math.round(150 * root.dockSurface.animationScale); easing.type: Easing.OutCubic } }
       Behavior on y { NumberAnimation { duration: Math.round(150 * root.dockSurface.animationScale); easing.type: Easing.OutCubic } }
       onActivated: function(entry) { dockSurface.activate(entry) }
-      onContextRequested: function(entry, position) { dockSurface.contextRequested(entry, position) }
       onReorderDropped: function(entry, position) { dockSurface.finishDrag(entry, position) }
     }
   }
