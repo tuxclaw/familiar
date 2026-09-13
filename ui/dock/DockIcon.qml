@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/DockPins.js" as DockPins
 import "../../lib/Input.js" as Input
 import Quickshell
 import qs.Commons
@@ -15,7 +16,9 @@ Item {
   property bool pinned: false
   property bool fallbackActive: false
   property bool showRunningIndicator: true
-  property bool contextMenuEnabled: true
+  property bool contextMenuEnabled: entry.type !== "folder"
+  readonly property bool editable: entry.type === "folder" || !!entry.desktopId
+  readonly property bool editing: editable && dockSurface.editMode
   property string tooltipText: Input.boundedText(entry.name)
   property string profileId: "gnome"
   property real motionScale: 1
@@ -39,6 +42,14 @@ Item {
   Component.onDestruction: if (iconMouse.reorderGesture) root.dockSurface.draggingPinned = false
 
   z: iconMouse.reorderGesture ? 1 : 0
+  rotation: editing && motionScale > 0 ? wiggleAngle : 0
+  property real wiggleAngle: 0
+  SequentialAnimation on wiggleAngle {
+    running: root.editing && root.motionScale > 0
+    loops: Animation.Infinite
+    NumberAnimation { to: 2; duration: 130 }
+    NumberAnimation { to: -2; duration: 130 }
+  }
 
   implicitWidth: iconSize * magnifyScale + 8
   implicitHeight: iconSize * magnifyScale + 12
@@ -56,11 +67,18 @@ Item {
     asynchronous: true
     onStatusChanged: if (status === Image.Error && !root.fallbackActive) root.fallbackActive = true
     Behavior on width { NumberAnimation { duration: Math.round(100 * root.motionScale); easing.type: Easing.OutQuad } }
-    opacity: iconMouse.reorderGesture ? 0.75 : 1
-    transform: Translate {
-      x: iconMouse.reorderGesture ? root.dockSurface.pointerPosition.x - iconMouse.pressPosition.x : 0
-      y: launchBounce.running ? launchBounceOffset : 0
-    }
+    opacity: iconMouse.reorderGesture ? 0.2 : 1
+    transform: Translate { y: launchBounce.running ? launchBounceOffset : 0 }
+  }
+
+  Rectangle {
+    anchors.fill: parent
+    color: "transparent"
+    radius: 10
+    border.width: 2
+    border.color: Color.menu.text
+    visible: root.dockSurface.dragPlan !== null && root.dockSurface.dragPlan.kind === "merge"
+      && root.dockSurface.dragPlan.target === root.dockSurface.entryKey(root.entry)
   }
 
   property real launchBounceOffset: 0
@@ -86,24 +104,38 @@ Item {
     hoverEnabled: true
     property point pressPosition
     property bool reorderGesture: false
+    property bool held: false
+    property bool moved: false
+    property double pressTime: 0
     preventStealing: true
     cursorShape: reorderGesture ? Qt.ClosedHandCursor : Qt.PointingHandCursor
     onPressed: function(mouse) {
       reorderGesture = false
-      pressPosition = mapToItem(root.dockSurface, mouse.x, mouse.y)
+      held = false
+      moved = false
+      pressTime = Date.now()
+      pressPosition = mapToGlobal(mouse.x, mouse.y)
+      if (mouse.button === Qt.LeftButton && root.editable) holdTimer.restart()
     }
     onPositionChanged: function(mouse) {
       root.dockSurface.pointerPosition = mapToItem(root.dockSurface, mouse.x, mouse.y)
-      if (root.pinned && pressed && (pressedButtons & Qt.LeftButton)) {
-        var point = root.dockSurface.pointerPosition
-        if (Math.hypot(point.x - pressPosition.x, point.y - pressPosition.y) >= Qt.styleHints.startDragDistance) {
+      var point = root.dockSurface.pointerPosition
+      var globalPoint = mapToGlobal(mouse.x, mouse.y)
+      if (pressed && (pressedButtons & Qt.LeftButton)
+          && DockPins.isDrag(globalPoint.x - pressPosition.x, globalPoint.y - pressPosition.y, Qt.styleHints.startDragDistance)) {
+        moved = true
+        holdTimer.stop()
+      }
+      if (root.pinned && pressed && (pressedButtons & Qt.LeftButton) && moved) {
+        if (!reorderGesture) {
           reorderGesture = true
-          root.dockSurface.draggingPinned = true
+          root.dockSurface.beginDrag(root.entry)
         }
+        root.dockSurface.updateDrag(root.entry, point)
       }
     }
     onReleased: function(mouse) {
-      root.dockSurface.draggingPinned = false
+      holdTimer.stop()
       if (reorderGesture && mouse.button === Qt.LeftButton) {
         var entry = root.entry
         var position = mapToItem(root.dockSurface, mouse.x, mouse.y)
@@ -115,18 +147,51 @@ Item {
       }
     }
     onCanceled: {
+      holdTimer.stop()
       reorderGesture = false
-      root.dockSurface.draggingPinned = false
+      held = false
+      root.dockSurface.cancelDrag()
     }
     onExited: if (!pressed) root.dockSurface.pointerPosition = Qt.point(-10000, -10000)
     onClicked: function(mouse) {
       if (reorderGesture) return
+      if (held || moved) return
       if (mouse.button === Qt.RightButton && root.contextMenuEnabled)
-        root.contextRequested(root.entry, mapToItem(root.parent, mouse.x, mouse.y))
+        root.contextRequested(root.entry, mapToItem(root.dockSurface, mouse.x, mouse.y))
       else if (mouse.button === Qt.LeftButton)
         if (root.profileId === "macos" && root.motionScale > 0) launchBounce.restart()
       if (mouse.button === Qt.LeftButton)
         root.activated(root.entry)
+    }
+  }
+
+  Timer {
+    id: holdTimer
+    interval: 450
+    onTriggered: {
+      if (iconMouse.pressed && !iconMouse.moved && !iconMouse.reorderGesture
+          && DockPins.isLongPress(Date.now() - iconMouse.pressTime, 0, 0, Qt.styleHints.startDragDistance)) {
+        iconMouse.held = true
+        root.dockSurface.editMode = true
+      }
+    }
+  }
+
+  Rectangle {
+    visible: root.editing
+    anchors.top: parent.top
+    anchors.right: parent.right
+    width: 22; height: 22
+    radius: 11
+    color: Color.menu.selectedBackground
+    z: 5
+    Text { anchors.centerIn: parent; text: root.entry.type === "folder" ? "×" : (root.pinned ? "−" : "+"); color: Color.menu.text }
+    MouseArea {
+      anchors.fill: parent
+      onClicked: {
+        if (root.entry.type === "folder") root.dockSurface.dissolveFolder(root.entry.id)
+        else root.dockSurface.togglePin(root.entry)
+      }
     }
   }
 

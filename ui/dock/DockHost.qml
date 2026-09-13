@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/DockPins.js" as DockPins
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -28,7 +29,7 @@ Item {
       PanelWindow {
         id: dockWindow
         property bool menuOpen: menu.visible
-        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned
+        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.editMode
         property bool autoHidden: host.autohide
         property bool dockShown: !host.autohide || !autoHidden
 
@@ -37,8 +38,8 @@ Item {
         anchors.bottom: host.position === "bottom"
         anchors.left: host.position === "left"
         anchors.right: host.position === "right"
-        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth) : Math.max(1, dock.implicitHeight)
-        implicitHeight: host.position === "bottom" ? dock.implicitHeight + (menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
+        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth, dock.folderPopupWidth) : Math.max(1, dock.implicitHeight)
+        implicitHeight: host.position === "bottom" ? dock.implicitHeight + Math.max(dock.popupHeight, menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
         exclusiveZone: host.autohide ? 0 : (host.position === "bottom" ? dock.implicitHeight : dock.implicitHeight)
         exclusionMode: host.autohide ? ExclusionMode.Ignore : ExclusionMode.Auto
         color: "transparent"
@@ -97,12 +98,7 @@ Item {
             id: menu
             anchors.bottom: dock.top
             onPinRequested: function(desktopId, pin) {
-              desktopId = dock.normalize(desktopId)
-              var next = host.pinned.map(function(id) { return dock.normalize(id) })
-              var index = next.indexOf(desktopId)
-              if (pin && index < 0) next.push(desktopId)
-              if (!pin && index >= 0) next.splice(index, 1)
-              if (host.service) host.service.persistPinned(next)
+              if (host.service) host.service.persistPinned(DockPins.toggle(host.pinned, desktopId, pin))
             }
             onNewWindowRequested: function(entry) { dock.launch(entry) }
             onQuitRequested: function(entry) {

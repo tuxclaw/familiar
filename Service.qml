@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "lib/DockPins.js" as DockPins
 
 Item {
   id: root
@@ -77,15 +78,13 @@ Item {
   }
 
   function normalizePinned(list) {
-    return Array.isArray(list) ? list.filter(function(id) { return typeof id === "string" }).map(function(id) {
-      return String(id || "").trim().replace(/\.desktop$/, "")
-    }).filter(function(id, index, ids) { return id.length > 0 && ids.indexOf(id) === index }) : []
+    return DockPins.normalize(list)
   }
 
   function persistPinned(list) {
-    if (arguments.length !== 1 || !Array.isArray(list)
-        || list.some(function(id) { return typeof id !== "string" })) return "refused"
-    pendingPinned = normalizePinned(list)
+    if (arguments.length !== 1) return "refused"
+    try { pendingPinned = normalizePinned(list) }
+    catch (error) { return "refused" }
     flushPinned()
     return "ok"
   }
@@ -106,7 +105,7 @@ Item {
   function ingestPinned(contents) {
     try {
       var data = JSON.parse(contents)
-      if (!Array.isArray(data.pins) || data.pins.some(function(id) { return typeof id !== "string" }))
+      if (!data || Object.keys(data).join(",") !== "pins")
         throw new Error("invalid pins")
       var next = normalizePinned(data.pins)
       if (JSON.stringify(next) !== JSON.stringify(storedPinned)) storedPinned = next

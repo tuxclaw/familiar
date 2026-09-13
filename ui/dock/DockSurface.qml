@@ -1,4 +1,5 @@
 import QtQuick
+import "../../lib/DockPins.js" as DockPins
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -16,6 +17,21 @@ Rectangle {
   property string runningIndicator: "dot"
   property point pointerPosition: Qt.point(-10000, -10000)
   property bool draggingPinned: false
+  readonly property real animationScale: familiar.motionScale
+  property bool editMode: false
+  property string openFolderId: ""
+  property var dragEntry: null
+  property var dragPlan: null
+  property var railKeys: []
+  property var dragSlots: []
+  property real dragRailWidth: 0
+  readonly property int cellWidth: iconSize + 11
+  readonly property int cellHeight: iconSize + 20
+  readonly property bool folderOpen: openFolderId !== ""
+  readonly property real folderPopupWidth: folderOpen ? folderPopup.width : 0
+  readonly property real popupHeight: folderOpen ? folderPopup.height + 8 : 0
+  property var folderEntries: []
+  property string folderName: ""
   property var pinnedEntries: []
   property var runningEntries: []
   readonly property var launcherEntry: ({
@@ -79,6 +95,7 @@ Rectangle {
   }
 
   function rebuild() {
+    if (draggingPinned) return // Keep the pointer grab alive until release.
     var windows = running || []
     var byId = Object.create(null)
     var desktops = Object.create(null)
@@ -95,6 +112,24 @@ Rectangle {
     var nextRunning = []
     var included = Object.create(null)
     for (var p = 0; p < pinned.length; p++) {
+      if (typeof pinned[p] !== "string") {
+        var folder = pinned[p]
+        var children = []
+        for (var f = 0; f < folder.items.length; f++) {
+          var childId = normalize(folder.items[f])
+          var childDesktop = desktopEntry(childId)
+          var childCanonical = entryId(childDesktop, childId)
+          var childWindows = byId[childCanonical] || []
+          children.push({ desktopId: childCanonical, pinId: childId, folderId: folder.id,
+            name: childDesktop ? (childDesktop.name || childCanonical) : childCanonical,
+            icon: entryIcon(childDesktop, childId), windows: childWindows,
+            windowCount: childWindows.length, pinned: true })
+          included[childCanonical] = true
+        }
+        nextPinned.push({ type: "folder", id: folder.id, pinId: folder.id, name: folder.name,
+          icon: "folder", items: children, pinned: true, windowCount: 0 })
+        continue
+      }
       var pinnedId = normalize(pinned[p])
       var desktop = desktopEntry(pinnedId)
       var canonicalId = entryId(desktop, pinnedId)
@@ -110,32 +145,120 @@ Rectangle {
     })
     pinnedEntries = nextPinned
     runningEntries = nextRunning
+    refreshFolder()
   }
 
-  function reorderPinned(entry, position) {
-    if (!entry.pinned || !service) return
-    var next = pinned.map(function(id) { return root.normalize(id) })
-    var source = next.indexOf(normalize(entry.pinId || entry.desktopId))
-    if (source < 0) return
-    var moved = next.splice(source, 1)[0]
-    var insert = next.length
-    // Coordinates and centers are both in DockSurface space; ignore the source.
+  function refreshFolder() {
+    var folder = pinnedEntries.filter(function(entry) { return entry.type === "folder" && entry.id === root.openFolderId })[0]
+    folderEntries = folder ? folder.items : []
+    folderName = folder ? folder.name : ""
+    if (!folder) openFolderId = ""
+  }
+
+  function entryKey(entry) {
+    return entry.type === "folder" ? "folder:" + entry.id : "app:" + normalize(entry.pinId || entry.desktopId)
+  }
+
+  function beginDrag(entry) {
+    var slots = []
     for (var i = 0; i < pinnedRepeater.count; i++) {
       var tile = pinnedRepeater.itemAt(i)
-      if (!tile) continue
-      var id = normalize(tile.entry.pinId || tile.entry.desktopId)
-      if (id === moved) continue
-      var center = tile.mapToItem(root, tile.width / 2, tile.height / 2)
-      if (position.x < center.x) {
-        insert = next.indexOf(id)
-        break
+      slots.push({ key: entryKey(tile.entry), x: tile.x, width: tile.width + 3 })
+    }
+    dragSlots = slots
+    dragRailWidth = pinnedRail.width
+    draggingPinned = true
+    dragEntry = entry
+    railKeys = pinnedEntries.map(entryKey)
+  }
+
+  function updateDrag(entry, position) {
+    if (!draggingPinned) return
+    var point = folderPopup.mapFromItem(root, position.x, position.y)
+    if (entry.folderId === openFolderId && folderOpen && point.x >= 0 && point.x < folderPopup.width
+        && point.y >= folderPopup.gridTop && point.y < folderPopup.height) {
+      var gridIndex = DockPins.railIndex(point.x - 12, point.y - folderPopup.gridTop,
+        folderEntries.length - 1, folderPopup.columns, cellWidth, cellHeight)
+      dragPlan = { kind: "grid", index: gridIndex }
+      railKeys = pinnedEntries.map(entryKey)
+      return
+    }
+    if (position.y < 0 || position.y > height || position.x < 0 || position.x > width) {
+      dragPlan = null
+      railKeys = pinnedEntries.map(entryKey)
+      return
+    }
+    var local = pinnedRail.mapFromItem(root, position.x, position.y)
+    var keys = pinnedEntries.map(entryKey)
+    var source = entry.folderId ? "app:" + entry.pinId : entryKey(entry)
+    var remaining = keys.filter(function(key) { return key !== source })
+    var index = remaining.length
+    var target = null
+    var centerDistance = 1
+    for (var i = 0; i < dragSlots.length; i++) {
+      var slot = dragSlots[i]
+      if (slot.key !== source && local.x < slot.x + slot.width / 2 && index === remaining.length)
+        index = remaining.indexOf(slot.key)
+      if (local.x >= slot.x && local.x < slot.x + slot.width) {
+        target = pinnedEntries[i]
+        centerDistance = Math.abs((local.x - slot.x) / slot.width - 0.5)
       }
     }
-    next.splice(insert, 0, moved)
-    if (next.join(",") !== pinned.join(",")) service.persistPinned(next)
+    // Hit-test captured slots, not animated delegates, to avoid oscillating targets.
+    if (target && entry.type !== "folder" && entryKey(target) !== source
+        && (!entry.folderId || target.id !== entry.folderId) && centerDistance < 0.18) {
+      dragPlan = { kind: "merge", target: entryKey(target) }
+      railKeys = keys
+    } else {
+      dragPlan = { kind: "rail", index: index }
+      railKeys = DockPins.insert(remaining, source, index)
+    }
+  }
+
+  function railSlot(entry, index) {
+    var slot = draggingPinned ? railKeys.indexOf(entryKey(entry)) : index
+    return slot < 0 ? index : slot
+  }
+
+  function finishDrag(entry, position) {
+    updateDrag(entry, position)
+    var plan = dragPlan
+    var next = null
+    if (plan && service) {
+      var source = entry.folderId ? entry.pinId : entryKey(entry)
+      if (plan.kind === "merge") next = DockPins.merge(pinned, source, entry.folderId, plan.target,
+        "folder-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8))
+      else if (plan.kind === "grid") next = DockPins.reorderFolder(pinned, entry.folderId, entry.pinId, plan.index)
+      else next = DockPins.move(pinned, source, entry.folderId, plan.index)
+    }
+    cancelDrag()
+    if (next && JSON.stringify(next) !== JSON.stringify(pinned)) service.persistPinned(next)
+  }
+
+  function cancelDrag() {
+    draggingPinned = false
+    dragEntry = null
+    dragSlots = []
+    dragPlan = null
+    railKeys = []
+    rebuild()
+  }
+
+  function togglePin(entry) {
+    if (service) service.persistPinned(DockPins.toggle(pinned, entry.pinId || entry.desktopId, !entry.pinned))
+  }
+
+  function dissolveFolder(id) {
+    if (service) service.persistPinned(DockPins.dissolve(pinned, id))
+    openFolderId = ""
   }
 
   function activate(entry) {
+    if (entry.type === "folder") {
+      openFolderId = openFolderId === entry.id ? "" : entry.id
+      return
+    }
+    if (editMode) return
     if (entry.windows && entry.windows.length > 0 && typeof entry.windows[0].activate === "function")
       entry.windows[0].activate()
     else launch(entry)
@@ -146,9 +269,37 @@ Rectangle {
     if (id) Util.execDetached("uwsm-app -- gtk-launch " + Util.shellQuote(id + ".desktop"))
   }
 
+  function pinnedX(entry, index) {
+    var offset = 0
+    if (draggingPinned) {
+      var slot = railSlot(entry, index)
+      for (var i = 0; i < slot; i++) {
+        var key = railKeys[i]
+        var original = dragSlots.filter(function(item) { return item.key === key })[0]
+        offset += original ? original.width : cellWidth
+      }
+    } else {
+      for (var i = 0; i < index; i++) {
+        var tile = pinnedRepeater.itemAt(i)
+        offset += tile ? tile.width + 3 : cellWidth
+      }
+    }
+    return offset
+  }
+
+  function pinnedWidth() {
+    if (draggingPinned) return dragRailWidth + (dragEntry.folderId && dragPlan && dragPlan.kind === "rail" ? cellWidth : 0)
+    var total = 0
+    for (var i = 0; i < pinnedRepeater.count; i++) {
+      var tile = pinnedRepeater.itemAt(i)
+      total += tile ? tile.width + 3 : cellWidth
+    }
+    return total
+  }
+
   function magnifyFor(index, item) {
-    if (!magnification || pointerPosition.x < -1000 || !item) return 1
-    var center = item.x + item.width / 2
+    if (draggingPinned || !magnification || pointerPosition.x < -1000 || !item) return 1
+    var center = item.mapToItem(root, item.width / 2, item.height / 2).x
     var distance = Math.abs(pointerPosition.x - center)
     var spread = iconSize * 1.35
     return 1 + 0.55 * Math.exp(-Math.pow(distance / spread, 2))
@@ -161,34 +312,65 @@ Rectangle {
   border.color: Color.menu.border
   border.width: 1
 
+  onOpenFolderIdChanged: refreshFolder()
   onPinnedChanged: rebuild()
   onRunningChanged: rebuild()
   Component.onCompleted: rebuild()
   Connections { target: DesktopEntries.applications; function onValuesChanged() { root.rebuild() } }
+
+  DockFolderPopup {
+    id: folderPopup
+    dockSurface: root
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.bottom: parent.top
+    anchors.bottomMargin: 8
+    visible: root.folderOpen
+    z: 10
+  }
+
+  // The ghost is independent of the original delegate and can cross the popup boundary.
+  Image {
+    visible: root.draggingPinned && root.dragEntry !== null
+    source: root.dragEntry ? Quickshell.iconPath(root.dragEntry.icon || "folder", "application-x-executable") : ""
+    x: root.pointerPosition.x - width / 2
+    y: root.pointerPosition.y - height / 2
+    width: root.iconSize
+    height: width
+    opacity: 0.85
+    z: 30
+  }
 
   Row {
     id: dockRow
     anchors.centerIn: parent
     spacing: 3
 
-    Repeater {
-      id: pinnedRepeater
-      model: root.pinnedEntries
-      DockIcon {
-        required property var modelData
-        required property int index
-        entry: modelData
-        dockSurface: root
-        appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
-        iconSize: root.iconSize
-        magnifyScale: root.magnifyFor(index, this)
-        indicatorStyle: root.runningIndicator
-        pinned: modelData.pinned
-        onReorderDropped: function(entry, position) { root.reorderPinned(entry, position) }
-        profileId: familiar.profileId
-        motionScale: familiar.motionScale
-        onActivated: root.activate(entry)
-        onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
+    Item {
+      id: pinnedRail
+      width: root.pinnedWidth()
+      height: root.cellHeight
+      Repeater {
+        id: pinnedRepeater
+        model: root.pinnedEntries
+        DockIcon {
+          required property var modelData
+          required property int index
+          entry: modelData
+          x: root.pinnedX(entry, index)
+          y: (pinnedRail.height - height) / 2
+          Behavior on x { NumberAnimation { duration: Math.round(150 * familiar.motionScale); easing.type: Easing.OutCubic } }
+          dockSurface: root
+          appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
+          iconSize: root.iconSize
+          magnifyScale: root.draggingPinned && root.dragSlots[index] ? (root.dragSlots[index].width - 11) / root.iconSize : root.magnifyFor(index, this)
+          indicatorStyle: root.runningIndicator
+          pinned: modelData.pinned
+          onReorderDropped: function(entry, position) { root.finishDrag(entry, position) }
+          profileId: familiar.profileId
+          motionScale: familiar.motionScale
+          onActivated: root.activate(entry)
+          onContextRequested: function(entry, position) { root.contextRequested(entry, position) }
+        }
       }
     }
 
@@ -237,6 +419,15 @@ Rectangle {
       contextMenuEnabled: false
       tooltipText: "Applications"
       onActivated: root.showLauncher()
+    }
+    Rectangle {
+      visible: root.editMode
+      width: 48
+      height: root.cellHeight
+      radius: 8
+      color: Color.menu.selectedBackground
+      Text { anchors.centerIn: parent; text: "Done"; color: Color.menu.text }
+      MouseArea { anchors.fill: parent; onClicked: { root.editMode = false; root.openFolderId = "" } }
     }
   }
 }
