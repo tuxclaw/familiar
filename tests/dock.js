@@ -477,12 +477,10 @@ surface.finishDrag(surface.folderEntries[0], { x: 180, y: 30 });
 assert.deepEqual(surface.saved, ['c', 'b']);
 assert.equal(surface.openFolderId, '');
 // Pin/unpin uses normalized original pin IDs, including WM-class pins.
-const host = vm.createContext({ DockPins, host: { pinned: [' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], service: { persistPinned(list) { host.saved = Array.from(list); } } }, dock: surface });
-vm.runInContext('var pin = ' + read('ui/dock/DockHost.qml').match(/onPinRequested: (function\([^]*?^\s+})/m)[1], host);
-host.pin('md.obsidian.Obsidian', true);
-assert.deepEqual(host.saved, ['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default']);
-host.pin(' md.obsidian.Obsidian.desktop ', false);
-assert.deepEqual(host.saved, ['chrome-127.0.0.1__-Default']);
+assert.deepEqual(DockPins.toggle([' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], 'md.obsidian.Obsidian', true),
+  ['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default']);
+assert.deepEqual(DockPins.toggle(['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default'], ' md.obsidian.Obsidian.desktop ', false),
+  ['chrome-127.0.0.1__-Default']);
 // PWA matching runs before browser heuristics, using the actual surface functions.
 const matcher = vm.createContext({});
 vm.runInContext(read('lib/PwaMatcher.js').replace(/^\.pragma library\s*/, ''), matcher);
