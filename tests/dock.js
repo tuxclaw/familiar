@@ -477,9 +477,9 @@ surface.finishDrag(surface.folderEntries[0], { x: 180, y: 30 });
 assert.deepEqual(surface.saved, ['c', 'b']);
 assert.equal(surface.openFolderId, '');
 // Pin/unpin uses normalized original pin IDs, including WM-class pins.
-assert.deepEqual(DockPins.toggle([' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], 'md.obsidian.Obsidian', true),
+assert.deepEqual(plain(DockPins.toggle([' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], 'md.obsidian.Obsidian', true)),
   ['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default']);
-assert.deepEqual(DockPins.toggle(['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default'], ' md.obsidian.Obsidian.desktop ', false),
+assert.deepEqual(plain(DockPins.toggle(['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default'], ' md.obsidian.Obsidian.desktop ', false)),
   ['chrome-127.0.0.1__-Default']);
 // PWA matching runs before browser heuristics, using the actual surface functions.
 const matcher = vm.createContext({});
