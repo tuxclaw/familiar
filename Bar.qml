@@ -20,6 +20,7 @@ Item {
   property string fontFamily: Style.font.family
   property var hostedStockItems: []
   readonly property string position: profileBar.position || "top"
+  readonly property bool centeredBar: (profileBar.center || []).length > 0
   readonly property bool vertical: false
   readonly property int barSize: familiar.px(profileBar.height || 32)
   readonly property color foreground: Color.bar.text
@@ -233,9 +234,10 @@ Item {
             role: "center"
             items: root.profileBar.center || []
             alignment: Qt.AlignHCenter
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
+            Layout.fillWidth: root.centeredBar
+            Layout.preferredWidth: root.centeredBar ? 1 : 0
             Layout.fillHeight: true
+            visible: root.centeredBar
           }
 
           BarSection {
@@ -243,8 +245,8 @@ Item {
             role: "right"
             items: root.profileBar.right || []
             alignment: Qt.AlignRight
-            Layout.fillWidth: true
-            Layout.preferredWidth: 1
+            Layout.fillWidth: root.centeredBar
+            Layout.preferredWidth: root.centeredBar ? 1 : 0
             Layout.fillHeight: true
           }
         }
