@@ -222,7 +222,7 @@ assert_contains ui/dock/DockWidgetCluster.qml 'registry.entryPointUrl(manifest, 
 assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.registerHostedItem(item)'
 assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.pressModuleClickTarget(slot, mouse.button, mouse.x, mouse.y)'
 assert_contains ui/dock/DockHost.qml 'shell.bar.barWidgetRegistry'
-assert_contains ui/dock/DockSurface.qml 'DockWidgetPicker {'
+assert_contains ui/dock/DockHost.qml 'DockWidgetPicker {'
 assert_contains Service.qml 'function persistWidgets(widgets, side)'
 node "$ROOT/tests/dock.js"
 node "$ROOT/tests/security.js"

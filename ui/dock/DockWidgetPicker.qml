@@ -16,11 +16,20 @@ Rectangle {
   function pick(id) {
     if (!service) return
     var base = service.pendingPinned || service.writingDock || { widgets: service.storedWidgets, widgetSide: service.widgetSide }
-    var widgets = base.widgets.slice()
+    var widgets = []
+    for (var i = 0; i < base.widgets.length; i++) widgets.push(base.widgets[i])
     var index = widgets.indexOf(id)
     if (index < 0) widgets.push(id)
     else widgets.splice(index, 1)
-    service.persistWidgets(widgets, base.widgetSide)
+    save(widgets, base.widgetSide)
+  }
+
+  function save(ids, side) {
+    // QML sequences need an explicit copy before strict document validation.
+    var widgets = []
+    for (var i = 0; i < ids.length; i++) widgets.push(ids[i])
+    if (service.persistWidgets(widgets, side) === "refused")
+      console.warn("Familiar: dock widget persistence refused")
   }
 
   Column {
@@ -61,7 +70,7 @@ Rectangle {
             onClicked: {
               if (!root.service) return
               var base = root.service.pendingPinned || root.service.writingDock || { widgets: root.service.storedWidgets }
-              root.service.persistWidgets(base.widgets, parent.modelData)
+              root.save(base.widgets, parent.modelData)
             }
           }
         }

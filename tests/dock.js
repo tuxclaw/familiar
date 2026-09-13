@@ -133,6 +133,12 @@ functions('ui/dock/DockWidgetCluster.qml', ['widgetComponent', 'widgetUrl', 'wid
 assert.equal(hosted.widgetComponent('omarchy.audio'), 'stock-component');
 assert.equal(hosted.widgetUrl('omarchy.audio'), '');
 assert.equal(hosted.widgetComponent('omarchy.unknown'), null);
+for (const registry of [{}, { widgets: {} }, { widgets: { 'omarchy.audio': {} } },
+  { widgets: { 'omarchy.audio': { component: null } } }]) {
+  hosted.bar.barWidgetRegistry = registry;
+  assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
+  assert.equal(hosted.widgetUrl('omarchy.unknown'), '');
+}
 hosted.bar.barWidgetRegistry = null;
 assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
 assert.equal(hosted.widgetUrl('omarchy.unknown'), '');
@@ -154,6 +160,25 @@ facade.unregisterClickTarget(target);
 facade.unregisterHostedItem(target);
 assert.equal(facade.clickTargets.length, 0);
 assert.equal(facade.hostedStockItems.length, 0);
+// Model a QML sequence with indexed access and no Array methods.
+const pickerWarnings = [];
+const picker = vm.createContext({ service, console: { warn(message) { pickerWarnings.push(message); } } });
+functions('ui/dock/DockWidgetPicker.qml', ['pick', 'save'], picker);
+service.pendingPinned = null;
+service.writingDock = null;
+service.pinnedPersistProcess.running = false;
+service.storedWidgets = { 0: 'omarchy.clock', length: 1 };
+picker.pick('omarchy.audio');
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+  { pins: mixed, widgets: ['omarchy.clock', 'omarchy.audio'], widgetSide: 'left' });
+picker.pick('omarchy.clock');
+assert.deepEqual(plain(service.pendingPinned.widgets), ['omarchy.audio']);
+picker.save({ 0: 'omarchy.audio', length: 1 }, 'right');
+assert.equal(service.pendingPinned.widgetSide, 'right');
+picker.pick('omarchy.unknown');
+assert.equal(pickerWarnings.length, 1);
+assert.match(pickerWarnings[0], /persistence refused/);
+assert.deepEqual(plain(service.pendingPinned.widgets), ['omarchy.audio']);
 const temp = fs.mkdtempSync(path.join(root, 'tests/.dock-test-'));
 try {
   const dir = path.join(temp, '.config/omarchy');
@@ -167,6 +192,25 @@ try {
   const ok = (...args) => { const result = run(...args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
   assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
   assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  // Execute the command emitted by persistWidgets, then ingest the writer response.
+  service.pendingPinned = null;
+  service.writingDock = null;
+  service.pinnedPersistProcess.running = false;
+  service.ingestPinned(JSON.stringify(ok('--read')));
+  picker.pick('omarchy.audio');
+  const writeCommand = Array.from(service.pinnedPersistProcess.command);
+  assert.equal(writeCommand[2], '--write');
+  const written = spawnSync(writeCommand[0], writeCommand.slice(1),
+    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+  assert.equal(written.status, 0, written.stderr);
+  service.ingestPinned(written.stdout);
+  const persisted = { pins: ['a', 'b'], widgets: ['omarchy.audio'], widgetSide: 'right' };
+  assert.deepEqual(JSON.parse(fs.readFileSync(pinPath, 'utf8')), persisted);
+  assert.deepEqual(ok('--read'), persisted);
+  assert.deepEqual(plain(service.storedWidgets), ['omarchy.audio']);
+  assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  ok('--write', JSON.stringify(dockDoc(['a', 'b'])));
+
   fs.writeFileSync(shellPath, '{"bar":{"dockPinned":"different"}}');
   assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
   for (const side of ['left', 'right']) {
@@ -233,7 +277,29 @@ assert.match(dockHost, /visible: dockShown/); // Unmapped dock cannot intercept 
 assert.match(dockHost, /namespace: "familiar-dock-edge"/);
 assert.match(dockHost, /visible: host.autohide/);
 assert.match(dockHost, /onHoveredChanged: if \(hovered\) dockWindow.autoHidden = false/);
-assert.equal((dockHost.match(/PanelWindow \{/g) || []).length, 2);
+assert.equal((dockHost.match(/PanelWindow \{/g) || []).length, 3);
+const dockWindowSource = dockHost.slice(dockHost.indexOf('id: dockWindow'), dockHost.indexOf('id: pickerWindow'));
+const geometry = ['implicitWidth', 'implicitHeight'].map(name =>
+  dockWindowSource.match(new RegExp('^        ' + name + ': (.*)$', 'm'))[1]);
+for (const position of ['bottom', 'left', 'right']) {
+  const context = vm.createContext({ host: { position }, menuOpen: false,
+    dock: { implicitWidth: 160, implicitHeight: 76, widgetPickerOpen: false, folderOpen: false } });
+  const size = () => geometry.map(expression => vm.runInContext(expression, context));
+  const compact = size();
+  context.dock.widgetPickerOpen = true;
+  context.dock.widgetPopupWidth = 230;
+  context.dock.popupHeight = 400;
+  assert.deepEqual(size(), compact);
+  context.dock.folderOpen = true;
+  context.dock.folderPopupWidth = 500;
+  assert.deepEqual(size(), compact);
+}
+assert.match(dockWindowSource.match(/property bool hovered: (.*)/)[1], /dock\.widgetPickerOpen/);
+const pickerWindow = dockHost.slice(dockHost.indexOf('id: pickerWindow'), dockHost.indexOf('id: edgeWindow'));
+for (const contract of ['visible: host.enabled && dock.widgetPickerOpen', 'exclusiveZone: 0',
+  'exclusionMode: ExclusionMode.Ignore', 'WlrLayershell.namespace: "familiar-dock-picker"',
+  'WlrLayershell.layer: WlrLayer.Overlay', 'DockWidgetPicker {']) assert.ok(pickerWindow.includes(contract));
+assert.doesNotMatch(read('ui/dock/DockSurface.qml'), /DockWidgetPicker \{|widgetPopupWidth|popupHeight/);
 assert.doesNotMatch(dockHost, /screen\.(width|height)|revealStrip/);
 const edge = dockHost.slice(dockHost.indexOf('id: edgeWindow'));
 assert.match(edge, /exclusiveZone: 0/);

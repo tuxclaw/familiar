@@ -30,7 +30,7 @@ Item {
       PanelWindow {
         id: dockWindow
         property bool menuOpen: menu.visible
-        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.editMode || dockWidgetBar.activePopout !== null
+        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.widgetPickerOpen || dock.editMode || dockWidgetBar.activePopout !== null
         property bool autoHidden: host.autohide
         property bool dockShown: !host.autohide || !autoHidden
 
@@ -39,8 +39,8 @@ Item {
         anchors.bottom: host.position === "bottom"
         anchors.left: host.position === "left"
         anchors.right: host.position === "right"
-        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth, dock.folderPopupWidth, dock.widgetPopupWidth) : Math.max(1, dock.implicitHeight)
-        implicitHeight: host.position === "bottom" ? dock.implicitHeight + Math.max(dock.popupHeight, menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
+        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth) : Math.max(1, dock.implicitHeight)
+        implicitHeight: host.position === "bottom" ? dock.implicitHeight + (menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
         exclusiveZone: host.autohide ? 0 : (host.position === "bottom" ? dock.implicitHeight : dock.implicitHeight)
         exclusionMode: host.autohide ? ExclusionMode.Ignore : ExclusionMode.Auto
         color: "transparent"
@@ -119,6 +119,34 @@ Item {
                 if (typeof windows[i].close === "function") windows[i].close()
             }
           }
+        }
+      }
+
+      PanelWindow {
+        id: pickerWindow
+        screen: monitor.modelData
+        visible: host.enabled && dock.widgetPickerOpen
+        anchors.bottom: host.position === "bottom"
+        anchors.left: host.position === "left"
+        anchors.right: host.position === "right"
+        margins.bottom: host.position === "bottom" ? dock.implicitHeight + 8 : 0
+        margins.left: host.position === "left" ? dockWindow.implicitWidth + 8 : 0
+        margins.right: host.position === "right" ? dockWindow.implicitWidth + 8 : 0
+        implicitWidth: widgetPicker.width
+        implicitHeight: widgetPicker.height
+        exclusiveZone: 0
+        exclusionMode: ExclusionMode.Ignore
+        color: "transparent"
+        surfaceFormat.opaque: false
+        WlrLayershell.namespace: "familiar-dock-picker"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+
+        DockWidgetPicker {
+          id: widgetPicker
+          dockSurface: dock
+          focus: true
+          Keys.onEscapePressed: dock.widgetPickerOpen = false
         }
       }
 

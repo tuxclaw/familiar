@@ -11,7 +11,6 @@ Rectangle {
   property var service: null
   property var widgetBar: null
   property bool widgetPickerOpen: false
-  readonly property real widgetPopupWidth: widgetPickerOpen ? widgetPicker.width : 0
   readonly property real widgetWidth: widgetCluster.width > 0 ? widgetCluster.width + 8 : 0
   readonly property bool widgetsLeft: service && service.widgetSide === "left"
   property var pinned: []
@@ -33,8 +32,6 @@ Rectangle {
   readonly property int cellWidth: iconSize + 11
   readonly property int cellHeight: iconSize + 20
   readonly property bool folderOpen: openFolderId !== ""
-  readonly property real folderPopupWidth: folderOpen ? folderPopup.width : 0
-  readonly property real popupHeight: Math.max(folderOpen ? folderPopup.height + 8 : 0, widgetPickerOpen ? widgetPicker.height + 8 : 0)
   property var folderEntries: []
   property string folderName: ""
   property var pinnedEntries: []
@@ -332,14 +329,22 @@ Rectangle {
   Component.onCompleted: rebuild()
   Connections { target: DesktopEntries.applications; function onValuesChanged() { root.rebuild() } }
 
-  DockFolderPopup {
-    id: folderPopup
-    dockSurface: root
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.bottom: parent.top
-    anchors.bottomMargin: 8
+  PopupWindow {
     visible: root.folderOpen
-    z: 10
+    anchor.item: root
+    anchor.rect.x: (root.width - folderPopup.width) / 2
+    anchor.rect.y: -8
+    anchor.edges: Edges.Top | Edges.Left
+    anchor.gravity: Edges.Top | Edges.Right
+    anchor.adjustment: PopupAdjustment.Slide
+    implicitWidth: folderPopup.width
+    implicitHeight: folderPopup.height
+    color: "transparent"
+
+    DockFolderPopup {
+      id: folderPopup
+      dockSurface: root
+    }
   }
 
   DockWidgetCluster {
@@ -349,16 +354,6 @@ Rectangle {
     widgets: root.service ? root.service.storedWidgets : []
     x: root.widgetsLeft ? 8 : dockRow.x + dockRow.width + 8
     anchors.verticalCenter: parent.verticalCenter
-  }
-
-  DockWidgetPicker {
-    id: widgetPicker
-    dockSurface: root
-    visible: root.widgetPickerOpen
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.bottom: parent.top
-    anchors.bottomMargin: 8
-    z: 20
   }
 
   // The ghost is independent of the original delegate and can cross the popup boundary.

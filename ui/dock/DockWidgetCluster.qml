@@ -17,7 +17,7 @@ Row {
   }
 
   function widgetUrl(id) {
-    if (DockPins.widgetIds.indexOf(id) < 0 || !bar || bar.barWidgetRegistry) return ""
+    if (DockPins.widgetIds.indexOf(id) < 0 || !bar || widgetComponent(id)) return ""
     var registry = bar.pluginRegistry
     var manifest = registry && registry.installedPlugins ? registry.installedPlugins[id] : null
     return manifest && typeof registry.entryPointUrl === "function"
