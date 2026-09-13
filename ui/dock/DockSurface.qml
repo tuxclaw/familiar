@@ -40,7 +40,7 @@ Rectangle {
     desktopId: "",
     pinId: "",
     name: "Applications",
-    icon: Quickshell.iconPath("view-app-grid", "view-grid-symbolic"),
+    icon: Qt.resolvedUrl("applications-256.png"),
     windows: [],
     windowCount: 0,
     pinned: false
