@@ -30,7 +30,12 @@ WidgetButton {
       source = Qt.resolvedUrl("../../assets/omarchy-logo.png")
   }
   HoverHandler { id: activityHover }
-  onPressed: function() {
+  ProfileMenu { id: profileMenu; anchorItem: root; bar: root.bar }
+  onPressed: function(button) {
+    if (button === Qt.RightButton) {
+      profileMenu.open()
+      return
+    }
     if (!root.bar || !root.bar.shell || !root.bar.manifest
         || typeof root.bar.shell.summon !== "function") return
     root.bar.shell.summon(root.bar.manifest.id, '{"surface":"overview"}')

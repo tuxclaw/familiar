@@ -69,6 +69,33 @@ assert_contains ui/bar/ActivitiesButton.qml 'Qt.resolvedUrl("../../assets/omarch
 assert_contains ui/bar/ActivitiesButton.qml 'labelVisible: false'
 assert_contains ui/bar/ActivitiesButton.qml 'text: " "'
 assert_contains ui/bar/AppMenuButton.qml 'WidgetButton {'
+for button in ActivitiesButton AppMenuButton; do
+  assert_contains "ui/bar/$button.qml" 'onPressed: function(button)'
+  assert_contains "ui/bar/$button.qml" 'button === Qt.RightButton'
+  assert_contains "ui/bar/$button.qml" 'profileMenu.open()'
+  assert_contains "ui/bar/$button.qml" 'ProfileMenu { id: profileMenu; anchorItem: root; bar: root.bar }'
+done
+assert_contains ui/bar/ProfileMenu.qml 'PopupWindow {'
+assert_contains ui/bar/ProfileMenu.qml '{ label: "GNOME", profileId: "gnome" }'
+assert_contains ui/bar/ProfileMenu.qml '{ label: "Plasma", profileId: "plasma" }'
+assert_contains ui/bar/ProfileMenu.qml '{ label: "Mac", profileId: "macos" }'
+assert_contains ui/bar/ProfileMenu.qml 'service.getProfile()'
+assert_contains ui/bar/ProfileMenu.qml 'root.currentProfile === modelData.profileId ? "✓" : ""'
+assert_contains ui/bar/ProfileMenu.qml 'targetService.setProfile(profileId)'
+assert_contains ui/bar/ProfileMenu.qml 'onClicked: root.pick(modelData.profileId)'
+assert_contains ui/bar/ProfileMenu.qml 'HyprlandFocusGrab {'
+assert_contains ui/bar/ProfileMenu.qml 'windows: [root]'
+assert_contains ui/bar/ProfileMenu.qml 'onCleared: root.close()'
+assert_contains Bar.qml 'implicitHeight: root.barSize'
+assert_contains Bar.qml 'exclusiveZone: root.profileBar.reserve === false ? 0 : implicitHeight'
+if grep -Eq -- 'screen[[:space:]]*\.[[:space:]]*(width|height)' "$ROOT/Bar.qml"; then
+  printf 'Bar geometry regression: screen dimensions found in Bar.qml\n' >&2
+  exit 1
+fi
+if grep -Eq -- 'PanelWindow|exclusiveZone|screen[[:space:]]*\.[[:space:]]*(width|height)' "$ROOT/ui/bar/ProfileMenu.qml"; then
+  printf 'Profile menu regression: panel or fullscreen geometry found\n' >&2
+  exit 1
+fi
 assert_contains ui/bar/NotificationsIndicator.qml 'WidgetButton {'
 assert_contains ui/bar/NotificationsIndicator.qml 'text: "󰂛"'
 if grep -Eq -- 'Notifications|unreadCount' "$ROOT/ui/bar/NotificationsIndicator.qml"; then

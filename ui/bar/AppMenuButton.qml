@@ -17,7 +17,12 @@ WidgetButton {
     Behavior on color { ColorAnimation { duration: root.bar ? root.bar.hoverDuration : 100; easing.type: root.bar ? root.bar.motionCurve : Easing.OutCubic } }
   }
   HoverHandler { id: appHover }
-  onPressed: function() {
+  ProfileMenu { id: profileMenu; anchorItem: root; bar: root.bar }
+  onPressed: function(button) {
+    if (button === Qt.RightButton) {
+      profileMenu.open()
+      return
+    }
     if (!root.bar || !root.bar.shell || typeof root.bar.shell.summon !== "function") return
     if (root.profileId === "macos") root.bar.shell.summon("omarchy.menu", "{}")
     else if (root.bar.manifest) root.bar.shell.summon(root.bar.manifest.id, '{"surface":"launcher"}')
