@@ -247,7 +247,7 @@ Item {
             alignment: Qt.AlignRight
             Layout.fillWidth: root.centeredBar
             Layout.preferredWidth: root.centeredBar ? 1 : implicitWidth
-            Layout.minimumWidth: implicitWidth
+            Layout.minimumWidth: root.centeredBar ? 0 : implicitWidth
             Layout.fillHeight: true
           }
         }
