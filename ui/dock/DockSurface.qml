@@ -232,7 +232,11 @@ Rectangle {
       else next = DockPins.move(pinned, source, entry.folderId, plan.index)
     }
     cancelDrag()
-    if (next && JSON.stringify(next) !== JSON.stringify(pinned)) service.persistPinned(next)
+    if (next && JSON.stringify(next) !== JSON.stringify(pinned)) {
+      service.persistPinned(next)
+      if (openFolderId && !next.some(function(pin) { return pin.type === "folder" && pin.id === root.openFolderId }))
+        openFolderId = ""
+    }
   }
 
   function cancelDrag() {

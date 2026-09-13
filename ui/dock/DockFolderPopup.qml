@@ -20,13 +20,28 @@ Rectangle {
   border.color: Color.menu.border
   radius: 14
 
-  Text {
+  TextInput {
     x: 12; y: 12
     width: parent.width - 48
-    text: root.dockSurface.folderName
-    textFormat: Text.PlainText
-    elide: Text.ElideRight
+    // TextInput always edits plain text; it has no rich-text mode.
+    maximumLength: 64
+    clip: true
+    selectByMouse: true
+    activeFocusOnTab: true
+    Accessible.name: "Folder name"
     color: Color.menu.text
+    onEditingFinished: {
+      var surface = root.dockSurface
+      if (!surface.service || !surface.openFolderId) return
+      try {
+        var next = DockPins.rename(surface.pinned, surface.openFolderId, text)
+        surface.service.persistPinned(next)
+        text = text.trim()
+      } catch (error) {
+        text = surface.folderName
+      }
+    }
+    Binding on text { value: root.dockSurface.folderName }
   }
   Text {
     anchors.right: parent.right

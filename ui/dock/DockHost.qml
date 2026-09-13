@@ -47,6 +47,7 @@ Item {
 
         WlrLayershell.namespace: "familiar-dock"
         WlrLayershell.layer: host.autohide ? WlrLayer.Overlay : WlrLayer.Top
+        WlrLayershell.keyboardFocus: dock.folderOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         onHoveredChanged: {
           if (hovered) {

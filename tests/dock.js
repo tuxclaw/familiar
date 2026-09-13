@@ -19,7 +19,31 @@ assert.deepEqual(plain(DockPins.merge(['a', 'b', 'd'], 'app:a', null, 'app:b', '
   [{ type: 'folder', id: 'new', name: 'Folder', items: ['b', 'a'] }, 'd']);
 assert.deepEqual(plain(DockPins.merge(mixed, 'app:a', null, 'folder:tools', 'unused')),
   [{ ...folder, items: ['b', 'c', 'a'] }, 'd']);
-assert.deepEqual(plain(DockPins.move(mixed, 'b', 'tools', 1)), ['a', 'b', { ...folder, items: ['c'] }, 'd']);
+assert.deepEqual(plain(DockPins.move(mixed, 'b', 'tools', 1)), ['a', 'b', 'c', 'd']);
+assert.deepEqual(plain(DockPins.move([folder], 'b', 'tools', 1)), ['c', 'b']);
+assert.deepEqual(plain(DockPins.move(mixed, 'b', 'tools', 3)), ['a', 'c', 'd', 'b']);
+assert.deepEqual(plain(DockPins.merge(mixed, 'b', 'tools', 'app:d', 'new')),
+  ['a', 'c', { type: 'folder', id: 'new', name: 'Folder', items: ['d', 'b'] }]);
+const renamed = plain(DockPins.rename(mixed, 'tools', '  My tools  '));
+assert.deepEqual(renamed, ['a', { ...folder, name: 'My tools' }, 'd']);
+assert.equal(folder.name, 'Tools');
+for (const name of ['', '   ', 'a/b', 'a\\b', 'a\n', 'a\x00b', 'a\x7fb', 'x'.repeat(65), '😀'.repeat(33), null])
+  assert.throws(() => DockPins.rename(mixed, 'tools', name));
+assert.equal(DockPins.rename(mixed, 'tools', '😀'.repeat(32))[1].name, '😀'.repeat(32));
+const title = vm.createContext({ DockPins, text: '  My tools  ', root: { dockSurface: {
+  pinned: mixed, openFolderId: 'tools', folderName: 'Tools',
+  service: { persistPinned(pins) { title.saved = plain(pins); } }
+} } });
+const titleHandler = read('ui/dock/DockFolderPopup.qml').match(/onEditingFinished: \{([^]*?)^    }/m)[1];
+vm.runInContext('var finish = function() {' + titleHandler + '}', title);
+title.finish();
+assert.deepEqual(title.saved, renamed);
+assert.equal(title.text, 'My tools');
+title.saved = null;
+title.text = 'bad/name';
+title.finish();
+assert.equal(title.saved, null);
+assert.equal(title.text, 'Tools');
 assert.deepEqual(plain(DockPins.move([{ ...folder, items: ['b'] }, 'd'], 'b', 'tools', 1)), ['d', 'b']);
 assert.deepEqual(plain(DockPins.reorderFolder(mixed, 'tools', 'b', 1)), ['a', { ...folder, items: ['c', 'b'] }, 'd']);
 assert.deepEqual(plain(DockPins.dissolve(mixed, 'tools')), ['a', 'b', 'c', 'd']);
@@ -90,6 +114,9 @@ try {
   assert.deepEqual(ok('--read'), { pins: [] }); // Empty pins do not migrate again.
   assert.deepEqual(ok('--write', JSON.stringify({ pins: mixed })), { pins: mixed });
   assert.deepEqual(ok('--read'), { pins: mixed });
+  assert.deepEqual(ok('--write', JSON.stringify({ pins: renamed })), { pins: renamed });
+  assert.deepEqual(ok('--read'), { pins: renamed });
+  ok('--write', JSON.stringify({ pins: mixed }));
   for (const pins of invalidPins) {
     assert.notEqual(run('--write', JSON.stringify({ pins })).status, 0);
     assert.deepEqual(ok('--read'), { pins: mixed });
@@ -182,6 +209,15 @@ assert.equal(surface.dragPlan.kind, 'rail');
 assert.deepEqual(plain(surface.railKeys), ['app:a', 'folder:tools', 'app:z', 'app:b']);
 surface.finishDrag(child, { x: 180, y: 30 });
 assert.deepEqual(surface.saved, ['a', { ...folder, items: ['c', 'd', 'e', 'f', 'g'] }, 'z', 'b']);
+// Extracting a child of a two-app folder collapses it and closes its popup.
+surface.pinned = [folder];
+surface.pinnedEntries = [{ ...folder, pinned: true }];
+surface.pinnedRepeater.count = 1;
+surface.folderEntries = ['b', 'c'].map(pinId => ({ pinId, folderId: 'tools', pinned: true }));
+surface.beginDrag(surface.folderEntries[0]);
+surface.finishDrag(surface.folderEntries[0], { x: 180, y: 30 });
+assert.deepEqual(surface.saved, ['c', 'b']);
+assert.equal(surface.openFolderId, '');
 // Pin/unpin uses normalized original pin IDs, including WM-class pins.
 const host = vm.createContext({ DockPins, host: { pinned: [' md.obsidian.Obsidian.desktop ', 'chrome-127.0.0.1__-Default'], service: { persistPinned(list) { host.saved = Array.from(list); } } }, dock: surface });
 vm.runInContext('var pin = ' + read('ui/dock/DockHost.qml').match(/onPinRequested: (function\([^]*?^\s+})/m)[1], host);
