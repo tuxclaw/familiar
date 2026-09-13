@@ -224,6 +224,7 @@ assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.pressModuleClickTarget(s
 assert_contains ui/dock/DockHost.qml 'shell.bar.barWidgetRegistry'
 assert_contains ui/dock/DockHost.qml 'DockWidgetPicker {'
 assert_contains Service.qml 'function persistWidgets(widgets, side)'
+# Includes scoped running/Applications Row-centering and shared glyph-baseline checks.
 node "$ROOT/tests/dock.js"
 node "$ROOT/tests/security.js"
 

@@ -5,6 +5,20 @@ const vm = require('node:vm');
 const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+// Row only positions children horizontally; both non-pinned tiles need explicit centering.
+const dockSurfaceQml = read('ui/dock/DockSurface.qml');
+const runningTile = dockSurfaceQml.match(/model: root\.runningEntries\s+DockIcon \{([^]*?)^      }/m)?.[1];
+const applicationsTile = dockSurfaceQml.match(/DockIcon \{\s+entry: root\.launcherEntry([^]*?)^    }/m)?.[1];
+for (const [name, tile] of [['running', runningTile], ['Applications', applicationsTile]]) {
+  assert.ok(tile, `${name} DockIcon exists`);
+  assert.match(tile, /anchors\.verticalCenter: parent\.verticalCenter/, `${name} is centered in the Row`);
+  assert.doesNotMatch(tile, /anchors\.(?:top|bottom|fill|centerIn):|\by:/, `${name} cannot override vertical centering`);
+}
+const iconImage = read('ui/dock/DockIcon.qml').match(/Image \{\s+id: icon([^]*?)^  }/m)[1];
+assert.match(iconImage, /anchors\.bottom: parent\.bottom/);
+assert.match(iconImage, /anchors\.bottomMargin: 12\s*\n/);
+assert.doesNotMatch(iconImage, /anchors\.top:|showRunningIndicator/);
+assert.match(applicationsTile, /showRunningIndicator: false/);
 function functions(file, names, context) {
   for (const name of names)
     vm.runInContext(read(file).match(new RegExp('  function ' + name + '\\([^]*?^  }', 'm'))[0], context);

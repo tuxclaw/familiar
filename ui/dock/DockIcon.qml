@@ -57,7 +57,9 @@ Item {
   Image {
     id: icon
     anchors.horizontalCenter: parent.horizontalCenter
-    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    // Reserve the indicator slot even when Applications hides its indicator.
+    anchors.bottomMargin: 12
     width: root.iconSize * root.magnifyScale
     height: width
     fillMode: Image.PreserveAspectFit

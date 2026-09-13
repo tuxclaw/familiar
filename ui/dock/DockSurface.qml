@@ -412,6 +412,7 @@ Rectangle {
     Repeater {
       model: root.runningEntries
       DockIcon {
+        anchors.verticalCenter: parent.verticalCenter
         required property var modelData
         required property int index
         entry: modelData
@@ -436,6 +437,7 @@ Rectangle {
 
     DockIcon {
       entry: root.launcherEntry
+      anchors.verticalCenter: parent.verticalCenter
       dockSurface: root
       appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
       iconSize: root.iconSize
