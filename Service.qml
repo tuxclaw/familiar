@@ -116,7 +116,6 @@ Item {
       pendingPinned = null
     } else command.push("--read")
     pinnedPersistProcess.command = command
-    pinnedPersistProcess.stdinEnabled = command[2] === "--write"
     pinnedPersistProcess.running = true
   }
 
@@ -175,9 +174,9 @@ Item {
   Process { id: persistProcess }
   Process {
     id: pinnedPersistProcess
+    stdinEnabled: true
     onStarted: {
-      if (root.writingDock !== null) pinnedPersistProcess.write(JSON.stringify(root.writingDock))
-      pinnedPersistProcess.stdinEnabled = false
+      if (root.writingDock !== null) pinnedPersistProcess.write(JSON.stringify(root.writingDock) + "\n")
     }
     stdout: StdioCollector { id: pinnedStdout; waitForEnd: true }
     onExited: {

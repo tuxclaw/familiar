@@ -73,7 +73,7 @@ def run(args):
     if args == ["--read"]:
         data = None
     elif args == ["--write"]:
-        payload = sys.stdin.buffer.read(MAX_STDIN_BYTES + 1)
+        payload = sys.stdin.buffer.readline(MAX_STDIN_BYTES + 1)
         if len(payload) > MAX_STDIN_BYTES:
             raise ValueError("stdin size limit exceeded")
         data = validate(json.loads(payload.decode("utf-8")))

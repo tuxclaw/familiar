@@ -79,10 +79,11 @@ const invalidPins = [[1], [{}], ['../app'], ['/tmp/app'], ['C:\\app'],
   [{ ...folder, name: '' }], [{ ...folder, name: 'a/b' }], [{ ...folder, name: 'a\n' }], [folder, folder]];
 for (const invalid of invalidPins) assert.throws(() => DockPins.normalize(invalid));
 const service = vm.createContext({ DockPins, storedPinned: [], pendingPinned: null, storedWidgets: [], widgetSide: "right", writingDock: null,
-  pinnedPersistProcess: { running: false }, Qt: { resolvedUrl: () => path.join(root, 'lib/dock-pins.py') }, console });
+  pinnedPersistProcess: { running: false, stdinEnabled: true }, Qt: { resolvedUrl: () => path.join(root, 'lib/dock-pins.py') }, console });
 functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned', 'ingestPinned', 'persistWidgets'], service);
 service.root = service;
-const started = read('Service.qml').match(/id: pinnedPersistProcess\s+onStarted: \{([^]*?)^    }/m)[1];
+const started = read('Service.qml').match(/id: pinnedPersistProcess\s+stdinEnabled: true\s+onStarted: \{([^]*?)^    }/m)[1];
+assert.doesNotMatch(read('Service.qml'), /\.stdinEnabled\s*=/);
 vm.runInContext('var startWriter = function() {' + started + '}', service);
 let writerRunning = false;
 Object.defineProperty(service.pinnedPersistProcess, 'running', {
@@ -93,10 +94,12 @@ Object.defineProperty(service.pinnedPersistProcess, 'running', {
     const proc = service.pinnedPersistProcess;
     assert.deepEqual(Array.from(proc.command), ['python3', path.join(root, 'lib/dock-pins.py'),
       service.writingDock === null ? '--read' : '--write']);
-    assert.equal(proc.stdinEnabled, proc.command[2] === '--write');
+    assert.equal(proc.stdinEnabled, true);
     proc.input = '';
     service.startWriter();
-    assert.equal(proc.stdinEnabled, false, 'stdin closes after startup to deliver EOF');
+    assert.equal(proc.stdinEnabled, true, 'stdin remains open after startup');
+    if (service.writingDock !== null)
+      assert.equal(proc.input, JSON.stringify(service.writingDock) + '\n');
   }
 });
 service.pinnedPersistProcess.write = function(data) {
@@ -214,7 +217,10 @@ picker.labels = ['Weather'];
 picker.parent = { index: 0, modelData: { invalid: 'QML model role' } };
 const widgetRows = read('ui/dock/DockWidgetPicker.qml').split('model: DockPins.widgetIds')[1].split('    Row {')[0];
 assert.doesNotMatch(widgetRows, /modelData/);
-assert.match(widgetRows, /root\.pick\(DockPins\.widgetIds\[parent\.index\]\)/);
+assert.match(widgetRows, /readonly property string widgetId: DockPins\.widgetIds\[index\]/);
+assert.match(widgetRows, /root\.pick\(widgetId\)/);
+picker.index = 0;
+picker.widgetId = vm.runInContext(widgetRows.match(/readonly property string widgetId: ([^\n]*)/)[1], picker);
 const pickerClick = widgetRows.match(/onClicked: ([^\n]*?) }/)[1];
 const pickerCheckmark = widgetRows.match(/text: ([^\n]*)/)[1];
 service.pendingPinned = null;
@@ -273,8 +279,37 @@ try {
   }
   const limit = 1024 * 1024;
   const emptyDoc = '{"pins":[]}';
+  // Keep the child's pipe open until it exits: a newline must suffice without EOF.
+  const lineDoc = { pins: ['a'], widgets: ['omarchy.weather'], widgetSide: 'left' };
+  const openStdin = spawnSync('python3', ['-c', `
+import subprocess, sys
+child = subprocess.Popen([sys.executable, sys.argv[1], '--write'],
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+try:
+    child.stdin.write(sys.stdin.buffer.read())
+    child.stdin.flush()
+    child.wait(timeout=3)
+    sys.stdout.buffer.write(child.stdout.read())
+    sys.stderr.buffer.write(child.stderr.read())
+    sys.exit(child.returncode)
+finally:
+    if child.poll() is None:
+        child.kill()
+        child.wait()
+    child.stdin.close()
+`, path.join(root, 'lib/dock-pins.py')],
+    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8', timeout: 5000,
+      input: JSON.stringify(lineDoc) + '\n' });
+  assert.ifError(openStdin.error);
+  assert.equal(openStdin.status, 0, openStdin.stderr);
+  assert.deepEqual(JSON.parse(openStdin.stdout), lineDoc);
+  assert.deepEqual(ok('--read'), lineDoc);
+  assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  assert.deepEqual(ok('--write', emptyDoc + '\nignored second line'), dockDoc([]));
+  assert.deepEqual(ok('--write', emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc) - 1) + '\n'), dockDoc([]));
   assert.deepEqual(ok('--write', emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc))), dockDoc([]));
   for (const input of [emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc) + 1),
+    emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc)) + '\n',
     '', Buffer.from([0xff]), '{"private-folder-name":',
     JSON.stringify({ pins: [{ ...folder, name: 'private-folder-name\ud800' }] }),
     '['.repeat(2000)]) {

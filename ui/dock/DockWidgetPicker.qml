@@ -41,16 +41,17 @@ Rectangle {
       model: DockPins.widgetIds
       Rectangle {
         required property int index
+        readonly property string widgetId: DockPins.widgetIds[index]
         width: column.width
         height: 28
         radius: 5
         color: pointer.containsMouse ? Color.menu.selectedBackground : "transparent"
         Text {
           anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
-          text: (root.service && root.service.storedWidgets.indexOf(DockPins.widgetIds[parent.index]) >= 0 ? "✓  " : "+  ") + root.labels[parent.index]
+          text: (root.service && root.service.storedWidgets.indexOf(widgetId) >= 0 ? "✓  " : "+  ") + root.labels[parent.index]
           color: Color.menu.text
         }
-        MouseArea { id: pointer; anchors.fill: parent; hoverEnabled: true; onClicked: root.pick(DockPins.widgetIds[parent.index]) }
+        MouseArea { id: pointer; anchors.fill: parent; hoverEnabled: true; onClicked: root.pick(widgetId) }
       }
     }
     Row {
