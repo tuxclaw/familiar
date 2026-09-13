@@ -109,6 +109,7 @@ for (const browser of ['chrome', 'chromium', 'brave', 'edge']) {
   assert.equal(matcher.parse(`${browser}-LOCALHOST:3000__-Profile 2.desktop`).host, 'localhost');
 }
 assert.equal(matcher.parse('chrome-127.0.0.1__-Default').host, '127.0.0.1');
+assert.equal(matcher.parse('chrome-messages.google.com__web_conversations-Default').host, 'messages.google.com');
 for (const id of ['google-chrome', 'chrome-maps.google.com', 'other-maps.google.com__-Default'])
   assert.equal(matcher.parse(id), null);
 assert.deepEqual(Array.from(matcher.hosts('omarchy-launch-webapp "https://maps.google.com:443/path?q=1"')), ['maps.google.com']);
@@ -122,6 +123,9 @@ assert.equal(matcher.matchEntry(pwaId, [{ id: 'Google Maps', name: 'Google Maps'
 assert.equal(matcher.matchEntry(pwaId, [{ ...maps, execString: 'app https://maps.google.com.evil.test' }]), null);
 assert.equal(matcher.matchEntry(pwaId, [maps, { ...maps, id: 'duplicate' }]), null);
 assert.equal(matcher.matchEntry('chrome-127.0.0.1__-Default', [maps, browser]), null);
+const messages = { id: 'Google Messages', name: 'Google Messages', icon: 'google-messages',
+  execString: 'omarchy-launch-webapp https://messages.google.com/web/conversations' };
+assert.equal(matcher.matchEntry('chrome-messages.google.com__web_conversations-Default', [browser, messages]), messages);
 const pwaSurface = vm.createContext({ PwaMatcher: matcher, pinned: ['google-chrome', pwaId],
   running: [{ appId: 'google-chrome' }, { appId: pwaId }], showRunning: true,
   DesktopEntries: { applications: { values: [browser, maps] },
