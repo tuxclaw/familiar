@@ -246,7 +246,8 @@ Item {
             items: root.profileBar.right || []
             alignment: Qt.AlignRight
             Layout.fillWidth: root.centeredBar
-            Layout.preferredWidth: root.centeredBar ? 1 : 0
+            Layout.preferredWidth: root.centeredBar ? 1 : implicitWidth
+            Layout.minimumWidth: implicitWidth
             Layout.fillHeight: true
           }
         }

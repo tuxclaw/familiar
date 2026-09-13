@@ -58,6 +58,8 @@ assert_contains profiles/gnome.json '"center": ["weather", "clock", "notificatio
 assert_contains profiles/plasma.json '"right": ["tray", "omarchyWidgets", "weather", "clock"]'
 assert_contains Bar.qml 'readonly property bool centeredBar:'
 assert_contains Bar.qml 'Layout.fillWidth: root.centeredBar'
+assert_contains Bar.qml 'Layout.preferredWidth: root.centeredBar ? 1 : implicitWidth'
+assert_contains Bar.qml 'Layout.minimumWidth: implicitWidth'
 assert_contains profiles/macos.json '"right": ["tray", "omarchyWidgets", "weather", "clock"]'
 assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(familiarSlot, mouse.button, mouse.x, mouse.y)'
 assert_contains ui/bar/BarSection.qml 'root.bar.pressModuleClickTarget(stockSlot, mouse.button, mouse.x, mouse.y)'
