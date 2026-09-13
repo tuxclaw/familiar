@@ -19,9 +19,17 @@ def app_id(value):
     return value
 
 
+WIDGET_IDS = {"omarchy.weather", "omarchy.audio", "omarchy.microphone", "omarchy.bluetooth",
+              "omarchy.network", "omarchy.power", "omarchy.clock", "omarchy.monitor", "omarchy.tailscale"}
+
+
 def validate(data):
-    if not isinstance(data, dict) or set(data) != {"pins"} or not isinstance(data["pins"], list):
+    if not isinstance(data, dict) or set(data) not in ({"pins"}, {"pins", "widgets", "widgetSide"}) or not isinstance(data["pins"], list):
         raise ValueError("expected {pins: [...]}")
+    widgets, side = data.get("widgets", []), data.get("widgetSide", "right")
+    if (not isinstance(widgets, list) or not isinstance(side, str) or side not in ("left", "right")
+            or any(not isinstance(value, str) or value not in WIDGET_IDS for value in widgets)):
+        raise ValueError("invalid widgets or side")
     seen, folders, pins = set(), set(), []
 
     def unique(value):
@@ -48,7 +56,7 @@ def validate(data):
         folders.add(pin["id"])
         items = [value for item in pin["items"] if (value := unique(item)) is not None]
         pins.append({"type": "folder", "id": pin["id"], "name": pin["name"].strip(), "items": items})
-    return {"pins": pins}
+    return {"pins": pins, "widgets": list(dict.fromkeys(widgets)), "widgetSide": side}
 
 
 def read_json(path):
@@ -79,7 +87,12 @@ def run(args):
         if target.is_symlink():
             raise ValueError("refusing symlink pin file")
         if data is None and target.exists():
-            return validate(read_json(target))
+            stored = read_json(target)
+            data = validate(stored)
+            if set(stored) == {"pins", "widgets", "widgetSide"}:
+                return data
+            # Upgrade a pre-widget document using the same atomic replacement.
+
         if data is None:
             # Only absence triggers migration. Empty or invalid existing files never do.
             try:

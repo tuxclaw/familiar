@@ -20,6 +20,9 @@ Item {
   property var storedPinned: []
   readonly property var pinnedIds: storedPinned
   property var pendingPinned: null
+  property var storedWidgets: []
+  property string widgetSide: "right"
+  property var writingDock: null
 
   property string lastHyprResult: "idle"
 
@@ -83,8 +86,21 @@ Item {
 
   function persistPinned(list) {
     if (arguments.length !== 1) return "refused"
-    try { pendingPinned = normalizePinned(list) }
+    try {
+      var base = pendingPinned || writingDock || { widgets: storedWidgets, widgetSide: widgetSide }
+      pendingPinned = DockPins.document({ pins: normalizePinned(list), widgets: base.widgets, widgetSide: base.widgetSide })
+    }
     catch (error) { return "refused" }
+    flushPinned()
+    return "ok"
+  }
+
+  function persistWidgets(widgets, side) {
+    if (arguments.length !== 2) return "refused"
+    try {
+      var base = pendingPinned || writingDock || { pins: storedPinned }
+      pendingPinned = DockPins.document({ pins: base.pins, widgets: widgets, widgetSide: side })
+    } catch (error) { return "refused" }
     flushPinned()
     return "ok"
   }
@@ -95,7 +111,8 @@ Item {
     var writerPath = writerUrl.indexOf("file://") === 0 ? writerUrl.slice(7) : writerUrl
     var command = ["python3", writerPath]
     if (pendingPinned !== null) {
-      command.push("--write", JSON.stringify({ pins: pendingPinned }))
+      writingDock = pendingPinned
+      command.push("--write", JSON.stringify(pendingPinned))
       pendingPinned = null
     } else command.push("--read")
     pinnedPersistProcess.command = command
@@ -104,11 +121,11 @@ Item {
 
   function ingestPinned(contents) {
     try {
-      var data = JSON.parse(contents)
-      if (!data || Object.keys(data).join(",") !== "pins")
-        throw new Error("invalid pins")
-      var next = normalizePinned(data.pins)
+      var data = DockPins.document(JSON.parse(contents))
+      var next = data.pins
       if (JSON.stringify(next) !== JSON.stringify(storedPinned)) storedPinned = next
+      if (JSON.stringify(data.widgets) !== JSON.stringify(storedWidgets)) storedWidgets = data.widgets
+      widgetSide = data.widgetSide
     } catch (error) {
       console.warn("Familiar: unable to read dock pins: " + error)
     }
@@ -161,6 +178,7 @@ Item {
     onExited: {
       if (exitCode !== 0) console.warn("Familiar: pin persistence failed: " + exitCode)
       else root.ingestPinned(pinnedStdout.text)
+      root.writingDock = null
       if (root.pendingPinned !== null) root.flushPinned()
     }
   }

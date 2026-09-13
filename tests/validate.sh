@@ -195,7 +195,7 @@ fi
 
 assert_contains Service.qml 'readonly property var pinnedIds:'
 assert_contains Service.qml 'Qt.resolvedUrl("lib/dock-pins.py")'
-assert_contains Service.qml 'JSON.stringify({ pins: pendingPinned })'
+assert_contains Service.qml 'JSON.stringify(pendingPinned)'
 assert_contains Service.qml 'else root.ingestPinned(pinnedStdout.text)'
 assert_contains lib/dock-pins.py 'target = directory / "familiar-dock.json"'
 assert_contains lib/dock-pins.py 'directory = Path.home() / ".config" / "omarchy"'
@@ -218,6 +218,12 @@ assert_contains Service.qml 'return DockPins.normalize(list)'
 assert_contains ui/dock/DockContextMenu.qml '[root.pinned ? "Unpin" : "Pin", "New window", "Quit"]'
 assert_contains ui/dock/DockIcon.qml 'Qt.styleHints.startDragDistance'
 assert_contains ui/dock/DockIcon.qml 'if (reorderGesture) return'
+assert_contains ui/dock/DockWidgetCluster.qml 'registry.entryPointUrl(manifest, "barWidget")'
+assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.registerHostedItem(item)'
+assert_contains ui/dock/DockWidgetCluster.qml 'root.bar.pressModuleClickTarget(slot, mouse.button, mouse.x, mouse.y)'
+assert_contains ui/dock/DockHost.qml 'shell.bar.barWidgetRegistry'
+assert_contains ui/dock/DockSurface.qml 'DockWidgetPicker {'
+assert_contains Service.qml 'function persistWidgets(widgets, side)'
 node "$ROOT/tests/dock.js"
 node "$ROOT/tests/security.js"
 

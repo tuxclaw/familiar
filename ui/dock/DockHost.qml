@@ -8,6 +8,7 @@ import "."
 Item {
   id: host
   property var service: null
+  property var shell: service ? service.shell : null
   property bool enabled: false
   property string position: "bottom"
   property int iconSize: 48
@@ -29,7 +30,7 @@ Item {
       PanelWindow {
         id: dockWindow
         property bool menuOpen: menu.visible
-        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.editMode
+        property bool hovered: dockHover.hovered || edgeHover.hovered || menuOpen || dock.draggingPinned || dock.folderOpen || dock.editMode || dockWidgetBar.activePopout !== null
         property bool autoHidden: host.autohide
         property bool dockShown: !host.autohide || !autoHidden
 
@@ -38,7 +39,7 @@ Item {
         anchors.bottom: host.position === "bottom"
         anchors.left: host.position === "left"
         anchors.right: host.position === "right"
-        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth, dock.folderPopupWidth) : Math.max(1, dock.implicitHeight)
+        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth, dock.folderPopupWidth, dock.widgetPopupWidth) : Math.max(1, dock.implicitHeight)
         implicitHeight: host.position === "bottom" ? dock.implicitHeight + Math.max(dock.popupHeight, menuOpen ? menu.height + 8 : 0) : Math.max(1, dock.implicitWidth)
         exclusiveZone: host.autohide ? 0 : (host.position === "bottom" ? dock.implicitHeight : dock.implicitHeight)
         exclusionMode: host.autohide ? ExclusionMode.Ignore : ExclusionMode.Auto
@@ -72,6 +73,15 @@ Item {
           onTriggered: if (host.autohide && !dockWindow.hovered) dockWindow.autoHidden = true
         }
 
+        DockWidgetBar {
+          id: dockWidgetBar
+          hostShell: host.shell
+          pluginRegistry: host.service ? host.service.pluginRegistry : null
+          barWidgetRegistry: host.shell && host.shell.bar ? host.shell.bar.barWidgetRegistry || null : null
+          barConfig: host.service ? host.service.barConfig : ({})
+          position: host.position
+        }
+
         Item {
           anchors.fill: parent
 
@@ -80,6 +90,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             service: host.service
+            widgetBar: dockWidgetBar
             iconSize: host.iconSize
             magnification: host.magnification
             pinned: host.pinned

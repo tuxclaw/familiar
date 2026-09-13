@@ -9,6 +9,11 @@ import "../../lib/PwaMatcher.js" as PwaMatcher
 Rectangle {
   id: root
   property var service: null
+  property var widgetBar: null
+  property bool widgetPickerOpen: false
+  readonly property real widgetPopupWidth: widgetPickerOpen ? widgetPicker.width : 0
+  readonly property real widgetWidth: widgetCluster.width > 0 ? widgetCluster.width + 8 : 0
+  readonly property bool widgetsLeft: service && service.widgetSide === "left"
   property var pinned: []
   property var running: []
   property int iconSize: 48
@@ -29,7 +34,7 @@ Rectangle {
   readonly property int cellHeight: iconSize + 20
   readonly property bool folderOpen: openFolderId !== ""
   readonly property real folderPopupWidth: folderOpen ? folderPopup.width : 0
-  readonly property real popupHeight: folderOpen ? folderPopup.height + 8 : 0
+  readonly property real popupHeight: Math.max(folderOpen ? folderPopup.height + 8 : 0, widgetPickerOpen ? widgetPicker.height + 8 : 0)
   property var folderEntries: []
   property string folderName: ""
   property var pinnedEntries: []
@@ -309,14 +314,19 @@ Rectangle {
     return 1 + 0.55 * Math.exp(-Math.pow(distance / spread, 2))
   }
 
-  implicitWidth: dockRow.implicitWidth + 16
+  implicitWidth: dockRow.implicitWidth + widgetWidth + 16
   implicitHeight: iconSize * (magnification ? 1.55 : 1) + 28
   radius: Math.min(18, implicitHeight / 3)
   color: Color.menu.background
   border.color: Color.menu.border
   border.width: 1
 
-  onOpenFolderIdChanged: refreshFolder()
+  onOpenFolderIdChanged: {
+    if (folderOpen) widgetPickerOpen = false
+    refreshFolder()
+  }
+  onWidgetPickerOpenChanged: if (widgetPickerOpen) openFolderId = ""
+  onEditModeChanged: if (!editMode) widgetPickerOpen = false
   onPinnedChanged: rebuild()
   onRunningChanged: rebuild()
   Component.onCompleted: rebuild()
@@ -330,6 +340,25 @@ Rectangle {
     anchors.bottomMargin: 8
     visible: root.folderOpen
     z: 10
+  }
+
+  DockWidgetCluster {
+    id: widgetCluster
+    bar: root.widgetBar
+    dockSurface: root
+    widgets: root.service ? root.service.storedWidgets : []
+    x: root.widgetsLeft ? 8 : dockRow.x + dockRow.width + 8
+    anchors.verticalCenter: parent.verticalCenter
+  }
+
+  DockWidgetPicker {
+    id: widgetPicker
+    dockSurface: root
+    visible: root.widgetPickerOpen
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.bottom: parent.top
+    anchors.bottomMargin: 8
+    z: 20
   }
 
   // The ghost is independent of the original delegate and can cross the popup boundary.
@@ -346,7 +375,8 @@ Rectangle {
 
   Row {
     id: dockRow
-    anchors.centerIn: parent
+    x: 8 + (root.widgetsLeft ? root.widgetWidth : 0)
+    anchors.verticalCenter: parent.verticalCenter
     spacing: 3
 
     Item {
@@ -424,6 +454,16 @@ Rectangle {
       tooltipText: "Applications"
       onActivated: root.showLauncher()
     }
+    Rectangle {
+      visible: root.editMode
+      width: 70
+      height: root.cellHeight
+      radius: 8
+      color: Color.menu.selectedBackground
+      Text { anchors.centerIn: parent; text: "Widgets"; color: Color.menu.text }
+      MouseArea { anchors.fill: parent; onClicked: root.widgetPickerOpen = !root.widgetPickerOpen }
+    }
+
     Rectangle {
       visible: root.editMode
       width: 48

@@ -115,7 +115,7 @@ Item {
       moved = false
       pressTime = Date.now()
       pressPosition = mapToGlobal(mouse.x, mouse.y)
-      if (mouse.button === Qt.LeftButton && root.editable) holdTimer.restart()
+      if (mouse.button === Qt.LeftButton && (root.editable || !root.contextMenuEnabled)) holdTimer.restart()
     }
     onPositionChanged: function(mouse) {
       root.dockSurface.pointerPosition = mapToItem(root.dockSurface, mouse.x, mouse.y)
@@ -173,6 +173,7 @@ Item {
           && DockPins.isLongPress(Date.now() - iconMouse.pressTime, 0, 0, Qt.styleHints.startDragDistance)) {
         iconMouse.held = true
         root.dockSurface.editMode = true
+        if (!root.contextMenuEnabled) root.dockSurface.widgetPickerOpen = true
       }
     }
   }

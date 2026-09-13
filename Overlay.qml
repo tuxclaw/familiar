@@ -98,6 +98,7 @@ Item {
   }
 
   DockHost {
+    shell: root.shell
     service: root.service
     enabled: root.service
       ? root.service.resolved("dockEnabled", root.dockProfile.enabled ? "on" : "off") !== "off"

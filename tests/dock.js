@@ -11,6 +11,7 @@ function functions(file, names, context) {
 }
 const DockPins = vm.createContext({});
 vm.runInContext(read('lib/DockPins.js').replace(/^\.pragma library\s*/, ''), DockPins);
+const dockDoc = pins => ({ pins, widgets: [], widgetSide: "right" });
 const plain = value => JSON.parse(JSON.stringify(value));
 const folder = { type: 'folder', id: 'tools', name: 'Tools', items: ['b', 'c'] };
 const mixed = ['a', folder, 'd'];
@@ -63,22 +64,22 @@ const invalidPins = [[1], [{}], ['../app'], ['/tmp/app'], ['C:\\app'],
   [{ ...folder, items: [folder] }], [{ ...folder, id: '../x' }], [{ ...folder, name: 'x'.repeat(65) }],
   [{ ...folder, name: '' }], [{ ...folder, name: 'a/b' }], [{ ...folder, name: 'a\n' }], [folder, folder]];
 for (const invalid of invalidPins) assert.throws(() => DockPins.normalize(invalid));
-const service = vm.createContext({ DockPins, storedPinned: [], pendingPinned: null,
+const service = vm.createContext({ DockPins, storedPinned: [], pendingPinned: null, storedWidgets: [], widgetSide: "right", writingDock: null,
   pinnedPersistProcess: { running: false }, Qt: { resolvedUrl: () => path.join(root, 'lib/dock-pins.py') }, console });
-functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned', 'ingestPinned'], service);
+functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned', 'ingestPinned', 'persistWidgets'], service);
 assert.equal(service.persistPinned([42]), 'refused');
 assert.equal(service.persistPinned([], '/tmp/elsewhere'), 'refused');
 assert.equal(service.persistPinned([' a.desktop ', 'a', 'b']), 'ok');
 const command = Array.from(service.pinnedPersistProcess.command);
-assert.deepEqual(JSON.parse(command.at(-1)), { pins: ['a', 'b'] });
+assert.deepEqual(JSON.parse(command.at(-1)), dockDoc(['a', 'b']));
 service.persistPinned(['later.desktop']);
-assert.deepEqual(Array.from(service.pendingPinned), ['later']);
+assert.deepEqual(Array.from(service.pendingPinned.pins), ['later']);
 assert.deepEqual(Array.from(service.pinnedPersistProcess.command), command);
 service.pinnedPersistProcess.running = false;
 service.flushPinned();
-assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)), { pins: ['later'] });
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)), dockDoc(['later']));
 service.persistPinned(mixed);
-assert.deepEqual(plain(service.pendingPinned), mixed);
+assert.deepEqual(plain(service.pendingPinned.pins), mixed);
 for (const invalid of invalidPins) assert.equal(service.persistPinned(invalid), 'refused');
 service.ingestPinned(JSON.stringify({ pins: mixed }));
 assert.deepEqual(plain(service.storedPinned), mixed);
@@ -88,6 +89,71 @@ const previous = service.storedPinned;
 service.ingestPinned('{"pins":["changed"]}');
 assert.notEqual(service.storedPinned, previous);
 assert.doesNotMatch(read('Service.qml'), /config\.bar\.dockPinned\s*=/);
+// Execute the allowlist/document validators and registry selection contract.
+const allowedWidgets = ['omarchy.weather', 'omarchy.audio', 'omarchy.microphone', 'omarchy.bluetooth',
+  'omarchy.network', 'omarchy.power', 'omarchy.clock', 'omarchy.monitor', 'omarchy.tailscale'];
+assert.deepEqual(plain(DockPins.widgetIds), allowedWidgets);
+const widgetDoc = { pins: mixed, widgets: allowedWidgets, widgetSide: 'left' };
+assert.deepEqual(plain(DockPins.document(widgetDoc)), widgetDoc);
+assert.deepEqual(plain(DockPins.document({ pins: mixed })), dockDoc(mixed));
+const invalidDocs = [
+  { ...widgetDoc, widgets: ['omarchy.unknown'] }, { ...widgetDoc, widgets: ['../omarchy.audio'] },
+  { ...widgetDoc, widgets: [42] }, { ...widgetDoc, widgets: [{}] }, { ...widgetDoc, widgets: 'omarchy.audio' },
+  { ...widgetDoc, widgetSide: 'top' }, { ...widgetDoc, widgetSide: null },
+  { ...widgetDoc, path: '/tmp/elsewhere' }, { ...widgetDoc, extra: true },
+  { pins: [], widgets: [] }, { pins: [], widgetSide: 'left' }
+];
+for (const data of invalidDocs) assert.throws(() => DockPins.document(data));
+service.pinnedPersistProcess.running = false;
+service.pendingPinned = null;
+service.writingDock = null;
+service.persistWidgets(['omarchy.audio'], 'left');
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+  { pins: ['changed'], widgets: ['omarchy.audio'], widgetSide: 'left' });
+service.persistPinned(mixed);
+service.persistWidgets(allowedWidgets, 'right');
+assert.deepEqual(plain(service.pendingPinned), { pins: mixed, widgets: allowedWidgets, widgetSide: 'right' });
+for (const data of invalidDocs.slice(0, 7)) assert.equal(service.persistWidgets(data.widgets, data.widgetSide), 'refused');
+assert.equal(service.persistWidgets([], 'left', '/tmp/elsewhere'), 'refused');
+service.ingestPinned(JSON.stringify(widgetDoc));
+assert.deepEqual(plain(service.storedWidgets), allowedWidgets);
+assert.equal(service.widgetSide, 'left');
+const storedBefore = JSON.stringify([service.storedPinned, service.storedWidgets, service.widgetSide]);
+const originalConsole = service.console;
+service.console = { warn() {} };
+for (const data of invalidDocs) service.ingestPinned(JSON.stringify(data));
+assert.equal(JSON.stringify([service.storedPinned, service.storedWidgets, service.widgetSide]), storedBefore);
+service.console = originalConsole;
+const hosted = vm.createContext({ DockPins, bar: { barWidgetRegistry: { revision: 1,
+  widgets: { 'omarchy.audio': { component: 'stock-component' } } },
+  pluginRegistry: { installedPlugins: { 'omarchy.audio': { id: 'omarchy.audio' } },
+    entryPointUrl(manifest, kind) { assert.equal(kind, 'barWidget'); return manifest.id + '/Widget.qml'; } },
+  barConfig: { layout: { right: [{ id: 'omarchy.audio', example: true }] } } } });
+functions('ui/dock/DockWidgetCluster.qml', ['widgetComponent', 'widgetUrl', 'widgetSettings'], hosted);
+assert.equal(hosted.widgetComponent('omarchy.audio'), 'stock-component');
+assert.equal(hosted.widgetUrl('omarchy.audio'), '');
+assert.equal(hosted.widgetComponent('omarchy.unknown'), null);
+hosted.bar.barWidgetRegistry = null;
+assert.equal(hosted.widgetUrl('omarchy.audio'), 'omarchy.audio/Widget.qml');
+assert.equal(hosted.widgetUrl('omarchy.unknown'), '');
+assert.equal(hosted.widgetUrl('omarchy.clock'), '');
+const settingsCopy = hosted.widgetSettings('omarchy.audio');
+settingsCopy.example = false;
+assert.equal(hosted.bar.barConfig.layout.right[0].example, true);
+const facade = vm.createContext({ clickTargets: [], hostedStockItems: [], activePopout: null });
+functions('ui/dock/DockWidgetBar.qml', ['registerHostedItem', 'unregisterHostedItem', 'registerClickTarget',
+  'unregisterClickTarget', 'moduleTargetClickable', 'moduleClickTargetAt', 'pressModuleClickTarget',
+  'requestPopout', 'releasePopout'], facade);
+let stockPress = 0;
+const target = { width: 30, height: 32, triggerPress(button) { stockPress = button; } };
+facade.registerHostedItem(target);
+facade.registerClickTarget(target);
+assert.equal(facade.pressModuleClickTarget({ mapToItem: () => ({ x: 5, y: 5 }) }, 1, 5, 5), true);
+assert.equal(stockPress, 1);
+facade.unregisterClickTarget(target);
+facade.unregisterHostedItem(target);
+assert.equal(facade.clickTargets.length, 0);
+assert.equal(facade.hostedStockItems.length, 0);
 const temp = fs.mkdtempSync(path.join(root, 'tests/.dock-test-'));
 try {
   const dir = path.join(temp, '.config/omarchy');
@@ -99,27 +165,41 @@ try {
   const run = (...args) => spawnSync('python3', [path.join(root, 'lib/dock-pins.py'), ...args],
     { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
   const ok = (...args) => { const result = run(...args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
-  assert.deepEqual(ok('--read'), { pins: ['a', 'b'] });
+  assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
   assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
   fs.writeFileSync(shellPath, '{"bar":{"dockPinned":"different"}}');
-  assert.deepEqual(ok('--read'), { pins: ['a', 'b'] });
+  assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
+  for (const side of ['left', 'right']) {
+    const data = { ...widgetDoc, widgetSide: side };
+    assert.deepEqual(ok('--write', JSON.stringify(data)), data);
+    assert.deepEqual(ok('--read'), data);
+    for (const invalid of invalidDocs) {
+      assert.notEqual(run('--write', JSON.stringify(invalid)).status, 0);
+      assert.deepEqual(ok('--read'), data);
+    }
+  }
+  ok('--write', JSON.stringify({ pins: ['a', 'b'] }));
+  fs.writeFileSync(pinPath, JSON.stringify({ pins: mixed }));
+  assert.deepEqual(ok('--read'), dockDoc(mixed));
+  assert.deepEqual(JSON.parse(fs.readFileSync(pinPath)), dockDoc(mixed));
+  ok('--write', JSON.stringify({ pins: ['a', 'b'] }));
   const unusual = 'app$(touch sentinel)`id`"';
   const oldFd = fs.openSync(pinPath, 'r');
-  assert.deepEqual(ok('--write', JSON.stringify({ pins: [unusual] })), { pins: [unusual] });
-  assert.deepEqual(JSON.parse(fs.readFileSync(oldFd)), { pins: ['a', 'b'] }); // Atomic replacement.
+  assert.deepEqual(ok('--write', JSON.stringify({ pins: [unusual] })), dockDoc([unusual]));
+  assert.deepEqual(JSON.parse(fs.readFileSync(oldFd)), dockDoc(['a', 'b'])); // Atomic replacement.
   fs.closeSync(oldFd);
-  assert.deepEqual(JSON.parse(fs.readFileSync(pinPath)), { pins: [unusual] });
+  assert.deepEqual(JSON.parse(fs.readFileSync(pinPath)), dockDoc([unusual]));
   assert.equal(fs.existsSync(path.join(temp, 'sentinel')), false);
   ok('--write', '{"pins":[]}');
-  assert.deepEqual(ok('--read'), { pins: [] }); // Empty pins do not migrate again.
-  assert.deepEqual(ok('--write', JSON.stringify({ pins: mixed })), { pins: mixed });
-  assert.deepEqual(ok('--read'), { pins: mixed });
-  assert.deepEqual(ok('--write', JSON.stringify({ pins: renamed })), { pins: renamed });
-  assert.deepEqual(ok('--read'), { pins: renamed });
+  assert.deepEqual(ok('--read'), dockDoc([])); // Empty pins do not migrate again.
+  assert.deepEqual(ok('--write', JSON.stringify({ pins: mixed })), dockDoc(mixed));
+  assert.deepEqual(ok('--read'), dockDoc(mixed));
+  assert.deepEqual(ok('--write', JSON.stringify({ pins: renamed })), dockDoc(renamed));
+  assert.deepEqual(ok('--read'), dockDoc(renamed));
   ok('--write', JSON.stringify({ pins: mixed }));
   for (const pins of invalidPins) {
     assert.notEqual(run('--write', JSON.stringify({ pins })).status, 0);
-    assert.deepEqual(ok('--read'), { pins: mixed });
+    assert.deepEqual(ok('--read'), dockDoc(mixed));
   }
   for (const data of ['{"pins":[1]}', '{"pins":[{}]}', '{"pins":"a"}', '{"pins":[],"path":"x"}'])
     assert.notEqual(run('--write', data).status, 0);
@@ -130,11 +210,11 @@ try {
   fs.unlinkSync(pinPath);
   fs.symlinkSync(shellPath, pinPath);
   assert.notEqual(run('--read').status, 0);
-  assert.notEqual(run('--write', '{"pins":[]}').status, 0);
+  assert.notEqual(run('--write', JSON.stringify(widgetDoc)).status, 0);
   assert.equal(fs.readFileSync(shellPath, 'utf8'), '{"bar":{"dockPinned":"different"}}');
   fs.unlinkSync(pinPath);
   fs.symlinkSync(path.join(dir, 'missing'), pinPath);
-  assert.notEqual(run('--write', '{"pins":[]}').status, 0);
+  assert.notEqual(run('--write', JSON.stringify(widgetDoc)).status, 0);
   fs.unlinkSync(pinPath);
   const lockPath = path.join(dir, '.familiar-dock.lock');
   fs.unlinkSync(lockPath);
@@ -353,6 +433,23 @@ gesture.Hold();
 assert.equal(gesture.root.dockSurface.editMode, false);
 gesture.Released(mouse(0));
 deferred();
+// Applications remains available for editing an empty dock, without becoming pinnable.
+gesture.root.contextMenuEnabled = false;
+gesture.root.editable = false;
+gesture.root.dockSurface.widgetPickerOpen = false;
+gesture.Pressed(mouse(0));
+gesture.pressTime = Date.now() - 460;
+gesture.Hold();
+assert.equal(gesture.root.dockSurface.widgetPickerOpen, true);
+gesture.Released(mouse(0));
+gesture.Clicked(mouse(0));
+assert.equal(activations, 1);
+// Stock inline preferences stay local, while stock panel summons retain the shell route.
+const shellFacadeSource = read('ui/dock/DockWidgetBar.qml');
+assert.doesNotMatch(shellFacadeSource, /hostShell\.updateEntryInline/);
+assert.doesNotMatch(read('ui/dock/DockWidgetCluster.qml'), /shellConfigMutator|updateEntryInline/);
+assert.match(read('ui/dock/DockHost.qml'), /dockWidgetBar\.activePopout !== null/);
+assert.match(read('ui/dock/DockSurface.qml'), /root\.widgetsLeft \? root\.widgetWidth : 0/);
 // Ban direct implicit size assignments on every Loader, while permitting child sizing.
 function scan(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -371,4 +468,4 @@ function scan(dir) {
   }
 }
 scan(root);
-console.log('Dock folders, merge/extract, rails, long-press/drag, PWA, persistence/symlinks, and Loader checks passed');
+console.log('Dock widgets/allowlist/hosting, folders, merge/extract, rails, long-press/drag, PWA, persistence/symlinks, and Loader checks passed');
