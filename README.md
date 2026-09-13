@@ -51,7 +51,7 @@ Target runtime: **Omarchy 4.0.2 Quattro** (`omarchy-shell`, one Quickshell proce
 | M2 | Overlay dock, pins, running apps, autohide | Done |
 | M3 | Launcher (grid / kickoff / spotlight) + dock Applications tile | Done |
 | M4 | Overview + switcher | Done |
-| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | Code complete — live `reapply` proven; marketplace listing pending |
+| M5 | Motion polish, light theme, hot corner, Hypr writer, docs/assets | Live `reapply` and `setProfile` proven; marketplace listing pending |
 
 Default branch: `main` (M0–M5). Milestone branches `andy/m0-skeleton` … `andy/m5-polish` remain as history.
 
@@ -67,7 +67,7 @@ Plugin directory **must** be `~/.config/omarchy/plugins/io.github.tuxclaw.famili
 
 ## Profiles
 
-Switch with:
+Right-click **Activities** (GNOME) or **Applications** (Plasma / Mac) and pick GNOME, Plasma, or Mac. Left-click still opens overview or the launcher. Super+Shift+F cycles. IPC still works:
 
 ```sh
 omarchy-shell shell call io.github.tuxclaw.familiar setProfile gnome
@@ -79,13 +79,13 @@ omarchy-shell shell call io.github.tuxclaw.familiar getProfile ''
 
 | | GNOME | Plasma | Mac |
 |---|---|---|---|
-| Bar | Top, 32px. Activities + pips | Bottom, 40px. Applications + tasks | Top, 28px. App menu + active app |
+| Bar | Top, 32px. Activities + pips; weather/clock/bell centered | Bottom, 40px. Applications + tasks; tray/clock flush right | Top, 28px. App menu + active app |
 | Dock | Off in profile JSON; enable with `bar.dockEnabled=on` | Off | On, magnify, bottom |
-| Launcher | App grid | Kickoff list | Spotlight list |
+| Launcher | App grid (Super+A) | Kickoff list | Spotlight list |
 | Overview | Activities | Present Windows | Mission Control |
 | Switcher | App row | Window thumbs | App row |
 
-GNOME’s bar has **no Applications button**. Open the launcher from the **dock Applications tile** (last icon on the right; hover the bottom edge if autohide is on).
+GNOME’s bar has **no Applications button**. Open the launcher with **Super+A**, or from the **dock Applications tile** if the dock is enabled (last icon on the right; hover the bottom edge if autohide is on).
 
 Omarchy menu stays on **Super+Alt+Space** in every profile.
 
@@ -104,7 +104,7 @@ omarchy-shell shell hide   io.github.tuxclaw.familiar
 
 Launcher: type to filter, arrows to move, Enter to launch, Escape to close. Ranking is prefix → word-start → fuzzy, then frecency at `~/.local/state/familiar/frecency.json`. Omarchy menu commands appear after two characters.
 
-Click **Activities** on the GNOME bar for overview.
+Click **Activities** on the GNOME bar for overview. Right-click it (or Plasma/Mac **Applications**) to switch desktop profiles.
 
 ## Hyprland Lua
 
