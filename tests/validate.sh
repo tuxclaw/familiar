@@ -195,7 +195,7 @@ fi
 
 assert_contains Service.qml 'readonly property var pinnedIds:'
 assert_contains Service.qml 'Qt.resolvedUrl("lib/dock-pins.py")'
-assert_contains Service.qml 'JSON.stringify(pendingPinned)'
+assert_contains Service.qml 'pinnedPersistProcess.write(JSON.stringify(root.writingDock))'
 assert_contains Service.qml 'else root.ingestPinned(pinnedStdout.text)'
 assert_contains lib/dock-pins.py 'target = directory / "familiar-dock.json"'
 assert_contains lib/dock-pins.py 'directory = Path.home() / ".config" / "omarchy"'

@@ -81,17 +81,42 @@ for (const invalid of invalidPins) assert.throws(() => DockPins.normalize(invali
 const service = vm.createContext({ DockPins, storedPinned: [], pendingPinned: null, storedWidgets: [], widgetSide: "right", writingDock: null,
   pinnedPersistProcess: { running: false }, Qt: { resolvedUrl: () => path.join(root, 'lib/dock-pins.py') }, console });
 functions('Service.qml', ['normalizePinned', 'persistPinned', 'flushPinned', 'ingestPinned', 'persistWidgets'], service);
+service.root = service;
+const started = read('Service.qml').match(/id: pinnedPersistProcess\s+onStarted: \{([^]*?)^    }/m)[1];
+vm.runInContext('var startWriter = function() {' + started + '}', service);
+let writerRunning = false;
+Object.defineProperty(service.pinnedPersistProcess, 'running', {
+  get() { return writerRunning; },
+  set(value) {
+    writerRunning = value;
+    if (!value) return;
+    const proc = service.pinnedPersistProcess;
+    assert.deepEqual(Array.from(proc.command), ['python3', path.join(root, 'lib/dock-pins.py'),
+      service.writingDock === null ? '--read' : '--write']);
+    assert.equal(proc.stdinEnabled, proc.command[2] === '--write');
+    proc.input = '';
+    service.startWriter();
+    assert.equal(proc.stdinEnabled, false, 'stdin closes after startup to deliver EOF');
+  }
+});
+service.pinnedPersistProcess.write = function(data) {
+  assert.equal(this.stdinEnabled, true);
+  this.input += data;
+};
+service.flushPinned();
+assert.equal(service.pinnedPersistProcess.input, '');
+service.pinnedPersistProcess.running = false;
 assert.equal(service.persistPinned([42]), 'refused');
 assert.equal(service.persistPinned([], '/tmp/elsewhere'), 'refused');
 assert.equal(service.persistPinned([' a.desktop ', 'a', 'b']), 'ok');
 const command = Array.from(service.pinnedPersistProcess.command);
-assert.deepEqual(JSON.parse(command.at(-1)), dockDoc(['a', 'b']));
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input), dockDoc(['a', 'b']));
 service.persistPinned(['later.desktop']);
 assert.deepEqual(Array.from(service.pendingPinned.pins), ['later']);
 assert.deepEqual(Array.from(service.pinnedPersistProcess.command), command);
 service.pinnedPersistProcess.running = false;
 service.flushPinned();
-assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)), dockDoc(['later']));
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input), dockDoc(['later']));
 service.persistPinned(mixed);
 assert.deepEqual(plain(service.pendingPinned.pins), mixed);
 for (const invalid of invalidPins) assert.equal(service.persistPinned(invalid), 'refused');
@@ -128,7 +153,7 @@ service.pinnedPersistProcess.running = false;
 service.pendingPinned = null;
 service.writingDock = null;
 service.persistWidgets(['omarchy.audio'], 'left');
-assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input),
   { pins: ['changed'], widgets: ['omarchy.audio'], widgetSide: 'left' });
 service.persistPinned(mixed);
 service.persistWidgets(allowedWidgets, 'right');
@@ -199,9 +224,9 @@ service.storedPinned = sequence(mixed);
 service.storedWidgets = [];
 assert.equal(vm.runInContext(pickerCheckmark, picker), '+  Weather');
 vm.runInContext(pickerClick, picker);
-assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input),
   { pins: mixed, widgets: ['omarchy.weather'], widgetSide: 'left' });
-service.ingestPinned(service.pinnedPersistProcess.command.at(-1));
+service.ingestPinned(service.pinnedPersistProcess.input);
 assert.equal(vm.runInContext(pickerCheckmark, picker), '✓  Weather');
 vm.runInContext(pickerClick, picker);
 assert.deepEqual(plain(service.pendingPinned.widgets), []);
@@ -210,7 +235,7 @@ service.writingDock = null;
 service.pinnedPersistProcess.running = false;
 service.storedWidgets = { 0: 'omarchy.clock', length: 1 };
 picker.pick('omarchy.audio');
-assert.deepEqual(JSON.parse(service.pinnedPersistProcess.command.at(-1)),
+assert.deepEqual(JSON.parse(service.pinnedPersistProcess.input),
   { pins: mixed, widgets: ['omarchy.clock', 'omarchy.audio'], widgetSide: 'left' });
 picker.pick('omarchy.clock');
 assert.deepEqual(plain(service.pendingPinned.widgets), ['omarchy.audio']);
@@ -228,11 +253,37 @@ try {
   const pinPath = path.join(dir, 'familiar-dock.json');
   const legacy = JSON.stringify({ bar: { dockPinned: ' a.desktop,b,a ' }, extra: 42 });
   fs.writeFileSync(shellPath, legacy);
-  const run = (...args) => spawnSync('python3', [path.join(root, 'lib/dock-pins.py'), ...args],
-    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+  const raw = (args, input = '') => {
+    const result = spawnSync('python3', [path.join(root, 'lib/dock-pins.py'), ...args],
+    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8', timeout: 5000, input });
+    assert.ifError(result.error);
+    return result;
+  };
+  const run = (operation, input = '') => raw([operation], input);
   const ok = (...args) => { const result = run(...args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
   assert.deepEqual(ok('--read'), dockDoc(['a', 'b']));
   assert.equal(fs.readFileSync(shellPath, 'utf8'), legacy);
+  const beforeRefusal = fs.readFileSync(pinPath, 'utf8');
+  for (const args of [[], ['--write', '{"pins":[]}'], ['--write', pinPath],
+    ['--read', pinPath], [pinPath], ['{"pins":[]}'], ['--write', '--read']]) {
+    const result = raw(args, '{"pins":[]}');
+    assert.notEqual(result.status, 0, 'extra JSON/path arguments must be refused');
+    assert.equal(result.stderr, 'Familiar dock pins: operation refused\n');
+    assert.equal(fs.readFileSync(pinPath, 'utf8'), beforeRefusal);
+  }
+  const limit = 1024 * 1024;
+  const emptyDoc = '{"pins":[]}';
+  assert.deepEqual(ok('--write', emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc))), dockDoc([]));
+  for (const input of [emptyDoc + ' '.repeat(limit - Buffer.byteLength(emptyDoc) + 1),
+    '', Buffer.from([0xff]), '{"private-folder-name":',
+    JSON.stringify({ pins: [{ ...folder, name: 'private-folder-name\ud800' }] }),
+    '['.repeat(2000)]) {
+    const result = run('--write', input);
+    assert.notEqual(result.status, 0);
+    assert.equal(result.stderr, 'Familiar dock pins: operation refused\n');
+    assert.deepEqual(ok('--read'), dockDoc([]));
+  }
+  ok('--write', JSON.stringify(dockDoc(['a', 'b'])));
   // Both plain arrays and QML-like sequences must reach the actual isolated writer.
   for (const widgets of [['omarchy.weather'], sequence(['omarchy.weather'])]) {
     service.pendingPinned = null;
@@ -242,7 +293,7 @@ try {
     assert.equal(service.persistWidgets(widgets, 'left'), 'ok');
     const command = Array.from(service.pinnedPersistProcess.command);
     const result = spawnSync(command[0], command.slice(1),
-      { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+      { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8', timeout: 5000, input: service.pinnedPersistProcess.input });
     assert.equal(result.status, 0, result.stderr);
     service.ingestPinned(result.stdout);
     const expected = { pins: ['a', 'b'], widgets: ['omarchy.weather'], widgetSide: 'left' };
@@ -262,7 +313,7 @@ try {
   const writeCommand = Array.from(service.pinnedPersistProcess.command);
   assert.equal(writeCommand[2], '--write');
   const written = spawnSync(writeCommand[0], writeCommand.slice(1),
-    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8' });
+    { cwd: temp, env: { ...process.env, HOME: temp }, encoding: 'utf8', timeout: 5000, input: service.pinnedPersistProcess.input });
   assert.equal(written.status, 0, written.stderr);
   service.ingestPinned(written.stdout);
   const persisted = { pins: ['a', 'b'], widgets: ['omarchy.audio'], widgetSide: 'right' };
@@ -308,7 +359,7 @@ try {
   }
   for (const data of ['{"pins":[1]}', '{"pins":[{}]}', '{"pins":"a"}', '{"pins":[],"path":"x"}'])
     assert.notEqual(run('--write', data).status, 0);
-  assert.notEqual(run('--read', pinPath).status, 0);
+  assert.notEqual(raw(['--read', pinPath]).status, 0);
   fs.writeFileSync(pinPath, 'broken');
   assert.notEqual(run('--read').status, 0);
   assert.equal(fs.readFileSync(pinPath, 'utf8'), 'broken');

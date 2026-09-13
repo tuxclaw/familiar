@@ -112,10 +112,11 @@ Item {
     var command = ["python3", writerPath]
     if (pendingPinned !== null) {
       writingDock = pendingPinned
-      command.push("--write", JSON.stringify(pendingPinned))
+      command.push("--write")
       pendingPinned = null
     } else command.push("--read")
     pinnedPersistProcess.command = command
+    pinnedPersistProcess.stdinEnabled = command[2] === "--write"
     pinnedPersistProcess.running = true
   }
 
@@ -174,6 +175,10 @@ Item {
   Process { id: persistProcess }
   Process {
     id: pinnedPersistProcess
+    onStarted: {
+      if (root.writingDock !== null) pinnedPersistProcess.write(JSON.stringify(root.writingDock))
+      pinnedPersistProcess.stdinEnabled = false
+    }
     stdout: StdioCollector { id: pinnedStdout; waitForEnd: true }
     onExited: {
       if (exitCode !== 0) console.warn("Familiar: pin persistence failed: " + exitCode)

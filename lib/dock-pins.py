@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fixed-path dock pin storage. Arguments contain an operation and data, never a path."""
+"""Fixed-path dock pin storage. Arguments select an operation; JSON arrives on stdin."""
 import fcntl
 import json
 import os
@@ -8,6 +8,8 @@ from pathlib import Path
 import stat
 import sys
 import tempfile
+
+MAX_STDIN_BYTES = 1024 * 1024
 
 
 def app_id(value):
@@ -70,10 +72,13 @@ def read_json(path):
 def run(args):
     if args == ["--read"]:
         data = None
-    elif len(args) == 2 and args[0] == "--write":
-        data = validate(json.loads(args[1]))
+    elif args == ["--write"]:
+        payload = sys.stdin.buffer.read(MAX_STDIN_BYTES + 1)
+        if len(payload) > MAX_STDIN_BYTES:
+            raise ValueError("stdin size limit exceeded")
+        data = validate(json.loads(payload.decode("utf-8")))
     else:
-        raise ValueError("expected --read or --write JSON; paths are not accepted")
+        raise ValueError("expected only --read or --write")
 
     directory = Path.home() / ".config" / "omarchy"
     for parent in reversed([directory, *directory.parents]):
@@ -132,6 +137,7 @@ def run(args):
 if __name__ == "__main__":
     try:
         print(json.dumps(run(sys.argv[1:])))
-    except (OSError, ValueError, TypeError, AttributeError) as error:
-        print("Familiar dock pins: " + str(error), file=sys.stderr)
+    except (OSError, ValueError, TypeError, AttributeError, RecursionError):
+        # Exceptions can contain document contents or user paths; never log them.
+        print("Familiar dock pins: operation refused", file=sys.stderr)
         sys.exit(1)
