@@ -30,8 +30,6 @@ Item {
   function iconSource(iconName) {
     var value = String(iconName || "")
     if (value.length === 0) return executableIcon
-    if (appLibrary && typeof appLibrary.iconSource === "function")
-      return appLibrary.iconSource(value) || executableIcon
     if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
     if (value.charAt(0) === "/") return Util.fileUrl(value)
     return Quickshell.iconPath(value, "application-x-executable")

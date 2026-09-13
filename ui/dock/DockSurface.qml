@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import "../.."
+import "../../lib/PwaMatcher.js" as PwaMatcher
 
 Rectangle {
   id: root
@@ -44,6 +45,9 @@ Rectangle {
     var rawTarget = String(id || "").trim()
     var target = normalize(rawTarget)
     if (!target) return null
+    // Browser heuristics can return the browser itself for a PWA WM class.
+    if (PwaMatcher.parse(target))
+      return PwaMatcher.matchEntry(target, DesktopEntries.applications.values || [])
     var indexed = DesktopEntries.byId(rawTarget) || DesktopEntries.byId(target)
     if (indexed) return indexed
     var heuristic = DesktopEntries.heuristicLookup(rawTarget) || DesktopEntries.heuristicLookup(target)
@@ -70,6 +74,10 @@ Rectangle {
     return id || normalize(fallback)
   }
 
+  function entryIcon(desktop, fallback) {
+    return desktop && desktop.icon ? desktop.icon : PwaMatcher.fallbackIcon(fallback)
+  }
+
   function rebuild() {
     var windows = running || []
     var byId = Object.create(null)
@@ -92,13 +100,13 @@ Rectangle {
       var canonicalId = entryId(desktop, pinnedId)
       if (!canonicalId || Object.prototype.hasOwnProperty.call(included, canonicalId)) continue
       var pinnedWindows = byId[canonicalId] || []
-      nextPinned.push({ desktopId: canonicalId, pinId: pinnedId, name: desktop ? (desktop.name || canonicalId) : canonicalId, icon: desktop ? (desktop.icon || "") : "", windows: pinnedWindows, windowCount: pinnedWindows.length, pinned: true })
+      nextPinned.push({ desktopId: canonicalId, pinId: pinnedId, name: desktop ? (desktop.name || canonicalId) : canonicalId, icon: entryIcon(desktop, pinnedId), windows: pinnedWindows, windowCount: pinnedWindows.length, pinned: true })
       included[canonicalId] = true
     }
     if (showRunning) Object.keys(byId).forEach(function(desktopId) {
       if (Object.prototype.hasOwnProperty.call(included, desktopId)) return
       var desktop = desktops[desktopId] || root.desktopEntry(desktopId)
-      nextRunning.push({ desktopId: root.entryId(desktop, desktopId), pinId: "", name: desktop ? (desktop.name || desktopId) : desktopId, icon: desktop ? (desktop.icon || "") : "", windows: byId[desktopId], windowCount: byId[desktopId].length, pinned: false })
+      nextRunning.push({ desktopId: root.entryId(desktop, desktopId), pinId: "", name: desktop ? (desktop.name || desktopId) : desktopId, icon: root.entryIcon(desktop, desktopId), windows: byId[desktopId], windowCount: byId[desktopId].length, pinned: false })
     })
     pinnedEntries = nextPinned
     runningEntries = nextRunning

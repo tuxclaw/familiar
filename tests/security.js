@@ -79,7 +79,7 @@ vm.runInContext(read('ui/switcher/SwitcherSurface.qml').match(/  function rebuil
 switcher.rebuild();
 assert.equal(switcher.entries.length, 3);
 const dock = vm.createContext({ running: windows, pinned: [], showRunning: true,
-  normalize: value => value, desktopEntry: () => null, entryId: (_, fallback) => fallback });
+  normalize: value => value, desktopEntry: () => null, entryId: (_, fallback) => fallback, entryIcon: () => '' });
 dock.root = dock;
 vm.runInContext(read('ui/dock/DockSurface.qml').match(/  function rebuild\([^]*?^  }/m)[0], dock);
 dock.rebuild();

@@ -101,6 +101,66 @@ host.pin('md.obsidian.Obsidian', true);
 assert.deepEqual(host.saved, ['md.obsidian.Obsidian', 'chrome-127.0.0.1__-Default']);
 host.pin(' md.obsidian.Obsidian.desktop ', false);
 assert.deepEqual(host.saved, ['chrome-127.0.0.1__-Default']);
+// PWA matching runs before browser heuristics, using the actual surface functions.
+const matcher = vm.createContext({});
+vm.runInContext(read('lib/PwaMatcher.js').replace(/^\.pragma library\s*/, ''), matcher);
+for (const browser of ['chrome', 'chromium', 'brave', 'edge']) {
+  assert.equal(matcher.parse(`${browser}-maps.google.com__-Default`).host, 'maps.google.com');
+  assert.equal(matcher.parse(`${browser}-LOCALHOST:3000__-Profile 2.desktop`).host, 'localhost');
+}
+assert.equal(matcher.parse('chrome-127.0.0.1__-Default').host, '127.0.0.1');
+for (const id of ['google-chrome', 'chrome-maps.google.com', 'other-maps.google.com__-Default'])
+  assert.equal(matcher.parse(id), null);
+assert.deepEqual(Array.from(matcher.hosts('omarchy-launch-webapp "https://maps.google.com:443/path?q=1"')), ['maps.google.com']);
+const maps = { id: 'Google Maps', name: 'Google Maps', icon: 'google-maps',
+  execString: 'omarchy-launch-webapp https://maps.google.com' };
+const browser = { id: 'google-chrome', name: 'Google Chrome', icon: 'google-chrome' };
+const pwaId = 'chrome-maps.google.com__-Default';
+assert.equal(matcher.matchEntry(pwaId, [browser, maps]), maps);
+assert.equal(matcher.matchEntry(pwaId, [{ id: 'custom', name: 'Custom', icon: 'google-maps' }]).icon, 'google-maps');
+assert.equal(matcher.matchEntry(pwaId, [{ id: 'Google Maps', name: 'Google Maps' }]).name, 'Google Maps');
+assert.equal(matcher.matchEntry(pwaId, [{ ...maps, execString: 'app https://maps.google.com.evil.test' }]), null);
+assert.equal(matcher.matchEntry(pwaId, [maps, { ...maps, id: 'duplicate' }]), null);
+assert.equal(matcher.matchEntry('chrome-127.0.0.1__-Default', [maps, browser]), null);
+const pwaSurface = vm.createContext({ PwaMatcher: matcher, pinned: ['google-chrome', pwaId],
+  running: [{ appId: 'google-chrome' }, { appId: pwaId }], showRunning: true,
+  DesktopEntries: { applications: { values: [browser, maps] },
+    byId(id) { return id === browser.id ? browser : null; }, heuristicLookup() { return browser; } } });
+pwaSurface.root = pwaSurface;
+functions('ui/dock/DockSurface.qml', ['normalize', 'desktopEntry', 'entryId', 'entryIcon', 'rebuild'], pwaSurface);
+pwaSurface.rebuild();
+assert.equal(pwaSurface.pinnedEntries.length, 2);
+assert.equal(pwaSurface.pinnedEntries[0].windowCount, 1);
+assert.equal(pwaSurface.pinnedEntries[1].icon, 'google-maps');
+assert.equal(pwaSurface.pinnedEntries[1].windowCount, 1);
+assert.equal(pwaSurface.pinnedEntries[1].pinId, pwaId);
+pwaSurface.pinned = ['google-chrome'];
+pwaSurface.rebuild();
+assert.equal(pwaSurface.runningEntries[0].desktopId, 'Google Maps');
+pwaSurface.DesktopEntries.applications.values = [browser];
+pwaSurface.running.push({ appId: 'chrome-127.0.0.1__-Default' });
+pwaSurface.rebuild();
+assert.equal(pwaSurface.pinnedEntries[0].windowCount, 1);
+assert.equal(pwaSurface.runningEntries.length, 2);
+assert.equal(pwaSurface.runningEntries[0].desktopId, pwaId);
+assert.equal(pwaSurface.runningEntries[1].icon, 'google-chrome');
+for (const [prefix, browserId] of [['chromium', 'chromium'], ['brave', 'brave-browser'], ['edge', 'microsoft-edge']]) {
+  const generic = { id: browserId, name: browserId, icon: browserId };
+  pwaSurface.pinned = [browserId];
+  pwaSurface.running = [{ appId: `${prefix}-maps.google.com__-Default` }];
+  pwaSurface.DesktopEntries = { applications: { values: [generic, maps] },
+    byId: id => id === browserId ? generic : null, heuristicLookup: () => generic };
+  pwaSurface.rebuild();
+  assert.equal(pwaSurface.pinnedEntries[0].windowCount, 0);
+  assert.equal(pwaSurface.runningEntries[0].icon, 'google-maps');
+}
+const iconContext = vm.createContext({ executableIcon: 'fallback',
+  appLibrary: { iconSource() { throw Error('GTK icons must use Quickshell'); } },
+  Quickshell: { iconPath: name => 'gtk:' + name }, Util: { fileUrl: file => 'file://' + file } });
+functions('ui/dock/DockIcon.qml', ['iconSource'], iconContext);
+assert.equal(iconContext.iconSource('google-maps'), 'gtk:google-maps');
+assert.equal(iconContext.iconSource('/tmp/icon.png'), 'file:///tmp/icon.png');
+assert.equal(iconContext.iconSource('image://icon/test'), 'image://icon/test');
 // Exercise the shipped pointer handlers: click, threshold, drop, and non-pinned tiles.
 let activations = 0;
 let drops = 0;
@@ -155,4 +215,4 @@ function scan(dir) {
   }
 }
 scan(root);
-console.log('Dock persistence, ordering, normalization, and Loader checks passed');
+console.log('Dock PWA matching/icons, persistence, ordering, normalization, and Loader checks passed');
