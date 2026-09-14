@@ -30,7 +30,7 @@ Item {
   readonly property color familiarHover: familiar.barHover
   readonly property color familiarActive: familiar.barActive
   readonly property int hoverDuration: profile.id === "macos" ? Math.round(120 * familiar.motionScale) : familiar.motionFast
-  readonly property int motionCurve: familiar.motionCurve
+  readonly property int motionCurve: profile.id === "macos" ? Easing.OutCubic : familiar.motionCurve
 
   function registerHostedItem(item) {
     if (!item || hostedStockItems.indexOf(item) !== -1) return

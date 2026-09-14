@@ -88,6 +88,24 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert/strict');
 const rootPath = process.argv[2];
+const plasma = JSON.parse(fs.readFileSync(rootPath + '/profiles/plasma.json', 'utf8'));
+assert.equal(plasma.bar.position, 'top');
+assert.equal(plasma.dock.enabled, false);
+assert.equal(plasma.dock.position, 'bottom');
+const bar = fs.readFileSync(rootPath + '/Bar.qml', 'utf8');
+const barMotion = bar.match(/readonly property int motionCurve:\s*([^\n]+)/);
+assert.ok(barMotion, 'Bar must define its hover/color motion curve');
+const Easing = {OutBack: 1, OutCubic: 2, Linear: 3};
+for (const id of ['macos', 'gnome', 'plasma']) {
+  const inherited = id === 'macos' ? Easing.OutBack : Easing.Linear;
+  const actual = vm.runInNewContext(barMotion[1], {
+    profile: {id}, familiar: {motionCurve: inherited}, Easing
+  });
+  assert.equal(actual, id === 'macos' ? Easing.OutCubic : inherited,
+    `${id} bar hover/color easing`);
+}
+assert.doesNotMatch(bar, /Behavior\s+on\s+(?:height|implicitHeight|barSize|exclusiveZone)\b/);
+console.log('Plasma top bar, disabled dock, and macOS bar easing checks passed');
 const button = fs.readFileSync(rootPath + '/ui/bar/ActivitiesButton.qml', 'utf8');
 const handler = button.match(/onPressed: function\(button\) \{([\s\S]*)\n  \}\n\}/)[1];
 const calls = [];

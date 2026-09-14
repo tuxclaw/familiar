@@ -2,7 +2,7 @@
   "id": "plasma",
   "label": "Plasma",
   "bar": {
-    "position": "bottom",
+    "position": "top",
     "height": 40,
     "reserve": true,
     "transparent": "solid",
