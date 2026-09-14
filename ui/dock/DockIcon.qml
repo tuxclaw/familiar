@@ -51,7 +51,8 @@ Item {
   }
 
   implicitWidth: iconSize * magnifyScale + 8
-  implicitHeight: iconSize * magnifyScale + 12
+  // Keep the glyph baseline and indicator fixed while the image grows upward.
+  implicitHeight: iconSize + 12
 
   Image {
     id: icon
@@ -62,12 +63,12 @@ Item {
     width: root.iconSize * root.magnifyScale
     height: width
     fillMode: Image.PreserveAspectFit
-    sourceSize.width: width * Screen.devicePixelRatio
-    sourceSize.height: height * Screen.devicePixelRatio
+    // Decode once at maximum magnification, not on every pointer movement.
+    sourceSize.width: Math.ceil(root.iconSize * 1.55 * Screen.devicePixelRatio)
+    sourceSize.height: sourceSize.width
     source: root.fallbackActive ? root.executableIcon : root.primaryIconSource
     asynchronous: true
     onStatusChanged: if (status === Image.Error && !root.fallbackActive) root.fallbackActive = true
-    Behavior on width { NumberAnimation { duration: Math.round(100 * root.motionScale); easing.type: Easing.OutQuad } }
     opacity: iconMouse.reorderGesture ? 0.2 : 1
     transform: Translate { y: launchBounce.running ? launchBounceOffset : 0 }
   }

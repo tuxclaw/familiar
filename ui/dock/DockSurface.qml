@@ -311,7 +311,10 @@ Rectangle {
   }
 
   implicitWidth: dockRow.implicitWidth + widgetWidth + 16
-  implicitHeight: iconSize * (magnification ? 1.55 : 1) + 28
+  readonly property int chromeHeight: iconSize + 12 + 8 // Indicator slot plus padding.
+  // Fixed headroom for maximum magnification and launch bounce; never hover-driven.
+  readonly property int magnifyOverflow: magnification ? Math.ceil(iconSize * 0.55) + 12 : 0
+  implicitHeight: chromeHeight
   radius: Math.min(18, implicitHeight / 3)
   color: Color.menu.background
   border.color: Color.menu.border
@@ -386,7 +389,10 @@ Rectangle {
           entry: modelData
           x: root.pinnedX(entry, index)
           y: (pinnedRail.height - height) / 2
-          Behavior on x { NumberAnimation { duration: Math.round(150 * familiar.motionScale); easing.type: Easing.OutCubic } }
+          Behavior on x {
+            enabled: root.draggingPinned
+            NumberAnimation { duration: Math.round(150 * familiar.motionScale); easing.type: Easing.OutCubic }
+          }
           dockSurface: root
           appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
           iconSize: root.iconSize

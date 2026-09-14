@@ -19,6 +19,40 @@ assert.match(iconImage, /anchors\.bottom: parent\.bottom/);
 assert.match(iconImage, /anchors\.bottomMargin: 12\s*\n/);
 assert.doesNotMatch(iconImage, /anchors\.top:|showRunningIndicator/);
 assert.match(applicationsTile, /showRunningIndicator: false/);
+// Hover changes glyph size immediately while keeping the pill and baseline fixed.
+const iconQml = read('ui/dock/DockIcon.qml');
+const hostQml = read('ui/dock/DockHost.qml');
+const binding = (source, name) => source.match(new RegExp('^\\s*' + name + ': (.*)$', 'm'))[1];
+assert.doesNotMatch(iconQml, /Behavior\s+on\s+(?:width|height|magnifyScale)\b/);
+assert.match(dockSurfaceQml, /Behavior on x\s*\{\s*enabled: root\.draggingPinned/);
+assert.doesNotMatch(binding(dockSurfaceQml, 'implicitHeight'), /1\.55|magnif/);
+assert.doesNotMatch(binding(hostQml, 'implicitHeight'), /magnifyScale/);
+assert.doesNotMatch(binding(iconImage, 'sourceSize.width'), /magnifyScale|(?<![\w.])width/);
+const chromeExpression = dockSurfaceQml.match(/readonly property int chromeHeight: ([^\n]+)/)[1];
+const overflowExpression = dockSurfaceQml.match(/readonly property int magnifyOverflow: ([^\n]+)/)[1];
+for (const iconSize of [32, 48, 64]) {
+  for (const magnification of [false, true]) {
+    const chromeHeight = vm.runInNewContext(chromeExpression, { iconSize });
+    const magnifyOverflow = vm.runInNewContext(overflowExpression, { iconSize, magnification });
+    assert.equal(chromeHeight, iconSize + 20);
+    assert.equal(vm.runInNewContext(binding(dockSurfaceQml, 'implicitHeight'), { chromeHeight }), chromeHeight);
+    for (const magnifyScale of [1, 1.25, 1.55]) {
+      const tileHeight = vm.runInNewContext(binding(iconQml, 'implicitHeight'), { iconSize, magnifyScale });
+      assert.equal(tileHeight, iconSize + 12);
+      const imageHeight = vm.runInNewContext(binding(iconImage, 'width'), { root: { iconSize, magnifyScale } });
+      assert.equal(imageHeight, iconSize * magnifyScale);
+      // All delegates share the same baseline, including Applications without a dot.
+      assert.equal(tileHeight - 12, iconSize);
+      if (magnification) assert.ok(magnifyOverflow >= imageHeight - iconSize + 12);
+      for (const autohide of [false, true]) {
+        const context = { host: { position: 'bottom', autohide }, dock: { chromeHeight, magnifyOverflow } };
+        assert.equal(vm.runInNewContext(binding(hostQml, 'implicitHeight'), context), chromeHeight + magnifyOverflow);
+        assert.equal(vm.runInNewContext(binding(hostQml, 'exclusiveZone'), context), autohide ? 0 : chromeHeight);
+      }
+    }
+  }
+}
+console.log('Dock instant hover, fixed baseline, compact chrome, and exclusive zone checks passed');
 function functions(file, names, context) {
   for (const name of names)
     vm.runInContext(read(file).match(new RegExp('  function ' + name + '\\([^]*?^  }', 'm'))[0], context);
@@ -467,7 +501,7 @@ const geometry = ['implicitWidth', 'implicitHeight'].map(name =>
   dockWindowSource.match(new RegExp('^        ' + name + ': (.*)$', 'm'))[1]);
 for (const position of ['bottom', 'left', 'right']) {
   const context = vm.createContext({ host: { position },
-    dock: { implicitWidth: 160, implicitHeight: 76, widgetPickerOpen: false, folderOpen: false } });
+    dock: { implicitWidth: 160, implicitHeight: 68, chromeHeight: 68, magnifyOverflow: 39, widgetPickerOpen: false, folderOpen: false } });
   const size = () => geometry.map(expression => vm.runInContext(expression, context));
   const compact = size();
   context.dock.widgetPickerOpen = true;
