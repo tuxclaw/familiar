@@ -19,7 +19,8 @@ Rectangle {
   property bool magnification: false
   property bool showRunning: true
   property string runningIndicator: "dot"
-  property point pointerPosition: Qt.point(-10000, -10000)
+  readonly property point pointerPosition: surfaceHover.hovered ? surfaceHover.point.position : Qt.point(-10000, -10000)
+  property point dragPosition: Qt.point(0, 0)
   property bool draggingPinned: false
   readonly property real animationScale: familiar.motionScale
   property bool editMode: false
@@ -161,6 +162,7 @@ Rectangle {
   }
 
   function beginDrag(entry) {
+    dragPosition = pointerPosition
     var slots = []
     for (var i = 0; i < pinnedRepeater.count; i++) {
       var tile = pinnedRepeater.itemAt(i)
@@ -175,6 +177,7 @@ Rectangle {
 
   function updateDrag(entry, position) {
     if (!draggingPinned) return
+    dragPosition = position
     var point = folderPopup.mapFromItem(root, position.x, position.y)
     if (entry.folderId === openFolderId && folderOpen && point.x >= 0 && point.x < folderPopup.width
         && point.y >= folderPopup.gridTop && point.y < folderPopup.height) {
@@ -283,34 +286,31 @@ Rectangle {
         var original = dragSlots.filter(function(item) { return item.key === key })[0]
         offset += original ? original.width : cellWidth
       }
-    } else {
-      for (var i = 0; i < index; i++) {
-        var tile = pinnedRepeater.itemAt(i)
-        offset += tile ? tile.width + 3 : cellWidth
-      }
-    }
+    } else offset = index * cellWidth
     return offset
   }
 
   function pinnedWidth() {
     if (draggingPinned) return dragRailWidth + (dragEntry.folderId && dragPlan && dragPlan.kind === "rail" ? cellWidth : 0)
-    var total = 0
-    for (var i = 0; i < pinnedRepeater.count; i++) {
-      var tile = pinnedRepeater.itemAt(i)
-      total += tile ? tile.width + 3 : cellWidth
-    }
-    return total
+    return pinnedEntries.length * cellWidth
   }
 
-  function magnifyFor(index, item) {
-    if (draggingPinned || !magnification || pointerPosition.x < -1000 || !item) return 1
-    var center = item.mapToItem(root, item.width / 2, item.height / 2).x
+  function magnifyFor(index) {
+    if (draggingPinned || !magnification || pointerPosition.x < -1000) return 1
+    // Rest cells plus fixed rail/separator gaps; never read delegate geometry.
+    var center = 8 + (widgetsLeft ? widgetWidth : 0) + index * cellWidth + (iconSize + 8) / 2
+    if (pinnedEntries.length > 0 && index >= pinnedEntries.length) {
+      center += 3 // The pinned rail includes its trailing cell spacing.
+      if (runningEntries.length > 0) center += 4 // Separator and Row spacing.
+    }
+    if (index === pinnedEntries.length + runningEntries.length && index > 0) center += 4
     var distance = Math.abs(pointerPosition.x - center)
     var spread = iconSize * 1.35
     return 1 + 0.55 * Math.exp(-Math.pow(distance / spread, 2))
   }
 
-  implicitWidth: dockRow.implicitWidth + widgetWidth + 16
+  readonly property real restWidth: dockRow.implicitWidth + widgetWidth + 16
+  implicitWidth: restWidth
   readonly property int chromeHeight: iconSize + 12 + 8 // Indicator slot plus padding.
   // Fixed headroom for maximum magnification and launch bounce; never hover-driven.
   readonly property int magnifyOverflow: magnification ? Math.ceil(iconSize * 0.55) + 12 : 0
@@ -319,6 +319,8 @@ Rectangle {
   color: Color.menu.background
   border.color: Color.menu.border
   border.width: 1
+
+  HoverHandler { id: surfaceHover }
 
   onOpenFolderIdChanged: {
     if (folderOpen) widgetPickerOpen = false
@@ -362,8 +364,8 @@ Rectangle {
   Image {
     visible: root.draggingPinned && root.dragEntry !== null
     source: root.dragEntry ? Quickshell.iconPath(root.dragEntry.icon || "folder", "application-x-executable") : ""
-    x: root.pointerPosition.x - width / 2
-    y: root.pointerPosition.y - height / 2
+    x: root.dragPosition.x - width / 2
+    y: root.dragPosition.y - height / 2
     width: root.iconSize
     height: width
     opacity: 0.85
@@ -396,7 +398,7 @@ Rectangle {
           dockSurface: root
           appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
           iconSize: root.iconSize
-          magnifyScale: root.draggingPinned && root.dragSlots[index] ? (root.dragSlots[index].width - 11) / root.iconSize : root.magnifyFor(index, this)
+          magnifyScale: root.magnifyFor(index)
           indicatorStyle: root.runningIndicator
           pinned: modelData.pinned
           onReorderDropped: function(entry, position) { root.finishDrag(entry, position) }
@@ -423,7 +425,7 @@ Rectangle {
         dockSurface: root
         appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
         iconSize: root.iconSize
-        magnifyScale: root.magnifyFor(root.pinnedEntries.length + index, this)
+        magnifyScale: root.magnifyFor(root.pinnedEntries.length + index)
         indicatorStyle: root.runningIndicator
         pinned: false
         profileId: familiar.profileId
@@ -444,7 +446,7 @@ Rectangle {
       dockSurface: root
       appLibrary: root.service && root.service.shell ? root.service.shell.appLibrary : null
       iconSize: root.iconSize
-      magnifyScale: root.magnifyFor(root.pinnedEntries.length + root.runningEntries.length, this)
+      magnifyScale: root.magnifyFor(root.pinnedEntries.length + root.runningEntries.length)
       indicatorStyle: root.runningIndicator
       pinned: false
       profileId: familiar.profileId

@@ -37,8 +37,8 @@ Item {
         anchors.bottom: host.position === "bottom"
         anchors.left: host.position === "left"
         anchors.right: host.position === "right"
-        implicitWidth: host.position === "bottom" ? Math.max(1, dock.implicitWidth) : Math.max(1, dock.implicitHeight)
-        implicitHeight: host.position === "bottom" ? dock.chromeHeight + dock.magnifyOverflow : Math.max(1, dock.implicitWidth)
+        implicitWidth: host.position === "bottom" ? Math.max(1, dock.restWidth) : Math.max(1, dock.implicitHeight)
+        implicitHeight: host.position === "bottom" ? dock.chromeHeight + dock.magnifyOverflow : Math.max(1, dock.restWidth)
         exclusiveZone: host.autohide ? 0 : dock.chromeHeight
         exclusionMode: host.autohide ? ExclusionMode.Ignore : ExclusionMode.Auto
         color: "transparent"

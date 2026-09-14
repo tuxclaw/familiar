@@ -27,6 +27,11 @@ assert.doesNotMatch(iconQml, /Behavior\s+on\s+(?:width|height|magnifyScale)\b/);
 assert.match(dockSurfaceQml, /Behavior on x\s*\{\s*enabled: root\.draggingPinned/);
 assert.doesNotMatch(binding(dockSurfaceQml, 'implicitHeight'), /1\.55|magnif/);
 assert.doesNotMatch(binding(hostQml, 'implicitHeight'), /magnifyScale/);
+assert.doesNotMatch(binding(iconQml, 'implicitWidth'), /magnify/);
+assert.doesNotMatch(iconQml, /onExited:|dockSurface\.pointerPosition\s*=/);
+assert.match(dockSurfaceQml, /readonly property point pointerPosition: surfaceHover\.hovered \? surfaceHover\.point\.position/);
+assert.match(dockSurfaceQml, /HoverHandler \{ id: surfaceHover \}/);
+assert.doesNotMatch(binding(hostQml, 'implicitWidth'), /magnif|dock\.implicitWidth/);
 assert.doesNotMatch(binding(iconImage, 'sourceSize.width'), /magnifyScale|(?<![\w.])width/);
 const chromeExpression = dockSurfaceQml.match(/readonly property int chromeHeight: ([^\n]+)/)[1];
 const overflowExpression = dockSurfaceQml.match(/readonly property int magnifyOverflow: ([^\n]+)/)[1];
@@ -37,6 +42,7 @@ for (const iconSize of [32, 48, 64]) {
     assert.equal(chromeHeight, iconSize + 20);
     assert.equal(vm.runInNewContext(binding(dockSurfaceQml, 'implicitHeight'), { chromeHeight }), chromeHeight);
     for (const magnifyScale of [1, 1.25, 1.55]) {
+      assert.equal(vm.runInNewContext(binding(iconQml, 'implicitWidth'), { iconSize, magnifyScale }), iconSize + 8);
       const tileHeight = vm.runInNewContext(binding(iconQml, 'implicitHeight'), { iconSize, magnifyScale });
       assert.equal(tileHeight, iconSize + 12);
       const imageHeight = vm.runInNewContext(binding(iconImage, 'width'), { root: { iconSize, magnifyScale } });
@@ -45,7 +51,8 @@ for (const iconSize of [32, 48, 64]) {
       assert.equal(tileHeight - 12, iconSize);
       if (magnification) assert.ok(magnifyOverflow >= imageHeight - iconSize + 12);
       for (const autohide of [false, true]) {
-        const context = { host: { position: 'bottom', autohide }, dock: { chromeHeight, magnifyOverflow } };
+        const context = { host: { position: 'bottom', autohide }, dock: { chromeHeight, magnifyOverflow, restWidth: 400 } };
+        assert.equal(vm.runInNewContext(binding(hostQml, 'implicitWidth'), context), 400);
         assert.equal(vm.runInNewContext(binding(hostQml, 'implicitHeight'), context), chromeHeight + magnifyOverflow);
         assert.equal(vm.runInNewContext(binding(hostQml, 'exclusiveZone'), context), autohide ? 0 : chromeHeight);
       }
@@ -57,6 +64,48 @@ function functions(file, names, context) {
   for (const name of names)
     vm.runInContext(read(file).match(new RegExp('  function ' + name + '\\([^]*?^  }', 'm'))[0], context);
 }
+// Build the resting Row independently and check every glyph's magnification peak.
+assert.doesNotMatch(dockSurfaceQml.match(/  function magnifyFor\([^]*?^  }/m)[0], /mapToItem|item\.|tile\./);
+for (const iconSize of [32, 48, 64]) for (const pinnedCount of [0, 1, 3])
+  for (const runningCount of [0, 1, 3]) for (const widgetsLeft of [false, true]) {
+    const context = vm.createContext({ iconSize, cellWidth: iconSize + 11, widgetsLeft, widgetWidth: 90,
+      pinnedEntries: Array(pinnedCount), runningEntries: Array(runningCount),
+      draggingPinned: false, magnification: true, pointerPosition: { x: 0 } });
+    functions('ui/dock/DockSurface.qml', ['magnifyFor', 'pinnedWidth', 'pinnedX'], context);
+    let x = 8 + (widgetsLeft ? 90 : 0);
+    const centers = [];
+    for (let i = 0; i < pinnedCount; i++) {
+      centers.push(x + (iconSize + 8) / 2);
+      x += iconSize + 11;
+    }
+    if (pinnedCount) x += 3;
+    if (pinnedCount && runningCount) x += 4;
+    for (let i = 0; i < runningCount; i++) {
+      centers.push(x + (iconSize + 8) / 2);
+      x += iconSize + 11;
+    }
+    if (pinnedCount + runningCount) x += 4;
+    centers.push(x + (iconSize + 8) / 2);
+    centers.forEach((center, index) => {
+      context.pointerPosition.x = center;
+      assert.equal(context.magnifyFor(index), 1.55);
+      context.pointerPosition.x = center - 10;
+      const left = context.magnifyFor(index);
+      context.pointerPosition.x = center + 10;
+      assert.equal(context.magnifyFor(index), left);
+      assert.equal(context.pinnedWidth(), pinnedCount * context.cellWidth);
+      assert.equal(context.pinnedX({}, index), index * context.cellWidth);
+    });
+    context.draggingPinned = true;
+    assert.equal(context.magnifyFor(0), 1);
+    context.draggingPinned = false;
+    context.pointerPosition.x = -10000;
+    assert.equal(context.magnifyFor(0), 1);
+    context.pointerPosition.x = centers[0];
+    context.magnification = false;
+    assert.equal(context.magnifyFor(0), 1);
+  }
+console.log('Dock fixed layout, surface pointer, and rest-center magnification checks passed');
 const DockPins = vm.createContext({});
 vm.runInContext(read('lib/DockPins.js').replace(/^\.pragma library\s*/, ''), DockPins);
 const dockDoc = pins => ({ pins, widgets: [], widgetSide: "right" });
@@ -501,7 +550,7 @@ const geometry = ['implicitWidth', 'implicitHeight'].map(name =>
   dockWindowSource.match(new RegExp('^        ' + name + ': (.*)$', 'm'))[1]);
 for (const position of ['bottom', 'left', 'right']) {
   const context = vm.createContext({ host: { position },
-    dock: { implicitWidth: 160, implicitHeight: 68, chromeHeight: 68, magnifyOverflow: 39, widgetPickerOpen: false, folderOpen: false } });
+    dock: { restWidth: 160, implicitHeight: 68, chromeHeight: 68, magnifyOverflow: 39, widgetPickerOpen: false, folderOpen: false } });
   const size = () => geometry.map(expression => vm.runInContext(expression, context));
   const compact = size();
   context.dock.widgetPickerOpen = true;
@@ -526,6 +575,7 @@ assert.match(edge, /implicitWidth: host.position === "bottom" \? dockWindow.impl
 assert.match(edge, /implicitHeight: host.position === "bottom" \? 2 : dockWindow.implicitHeight/);
 // Execute the actual preview/drop functions against stable slots.
 const surface = vm.createContext({ DockPins, pinned: ['a', 'b', 'c'], pinnedEntries: ['a', 'b', 'c'].map(pinId => ({ pinId, pinned: true })),
+  pointerPosition: { x: 30, y: 30 },
   height: 80, width: 240, cellWidth: 60, cellHeight: 60, folderOpen: false, openFolderId: '',
   folderPopup: { mapFromItem: (_, x, y) => ({ x, y }) },
   pinnedRail: { width: 180, mapFromItem: (_, x, y) => ({ x, y }) },

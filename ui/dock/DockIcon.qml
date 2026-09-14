@@ -50,7 +50,7 @@ Item {
     NumberAnimation { to: -2; duration: 130 }
   }
 
-  implicitWidth: iconSize * magnifyScale + 8
+  implicitWidth: iconSize + 8
   // Keep the glyph baseline and indicator fixed while the image grows upward.
   implicitHeight: iconSize + 12
 
@@ -120,8 +120,7 @@ Item {
       if (mouse.button === Qt.LeftButton && (root.editable || !root.contextMenuEnabled)) holdTimer.restart()
     }
     onPositionChanged: function(mouse) {
-      root.dockSurface.pointerPosition = mapToItem(root.dockSurface, mouse.x, mouse.y)
-      var point = root.dockSurface.pointerPosition
+      var point = mapToItem(root.dockSurface, mouse.x, mouse.y)
       var globalPoint = mapToGlobal(mouse.x, mouse.y)
       if (pressed && (pressedButtons & Qt.LeftButton)
           && DockPins.isDrag(globalPoint.x - pressPosition.x, globalPoint.y - pressPosition.y, Qt.styleHints.startDragDistance)) {
@@ -154,7 +153,6 @@ Item {
       held = false
       root.dockSurface.cancelDrag()
     }
-    onExited: if (!pressed) root.dockSurface.pointerPosition = Qt.point(-10000, -10000)
     onClicked: function(mouse) {
       if (reorderGesture) return
       if (held || moved) return
