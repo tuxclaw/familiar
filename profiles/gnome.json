@@ -18,7 +18,7 @@
     "magnification": false,
     "autohide": false,
     "showRunning": true,
-    "runningIndicator": "pill"
+    "runningIndicator": "line"
   },
   "launcher": {
     "style": "grid",

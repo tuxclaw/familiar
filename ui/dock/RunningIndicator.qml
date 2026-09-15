@@ -15,7 +15,7 @@ Item {
     spacing: 2
 
     Repeater {
-      model: root.style === "pill" ? 1 : Math.min(3, root.count)
+      model: root.count > 0 ? (root.style === "pill" ? 1 : Math.min(3, root.count)) : 0
       Rectangle {
         width: root.style === "line" ? 14 : root.style === "pill" ? 18 : 4
         height: root.style === "line" ? 2 : root.style === "pill" ? 3 : 4

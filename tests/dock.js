@@ -23,6 +23,27 @@ assert.match(applicationsTile, /showRunningIndicator: false/);
 const iconQml = read('ui/dock/DockIcon.qml');
 const hostQml = read('ui/dock/DockHost.qml');
 const binding = (source, name) => source.match(new RegExp('^\\s*' + name + ': (.*)$', 'm'))[1];
+const indicatorQml = read('ui/dock/RunningIndicator.qml');
+const iconIndicator = iconQml.match(/RunningIndicator \{([^]*?)^  }/m)[1];
+assert.equal(JSON.parse(read('profiles/gnome.json')).dock.runningIndicator, 'line');
+for (const style of ['dot', 'pill', 'line']) {
+  for (const windowCount of [undefined, 0, 1, 2, 4]) {
+    const count = vm.runInNewContext(binding(iconIndicator, 'count'), { root: { entry: { windowCount } } });
+    const model = vm.runInNewContext(binding(indicatorQml, 'model'), { root: { style, count } });
+    assert.equal(model, count > 0 ? (style === 'pill' ? 1 : Math.min(3, count)) : 0);
+    assert.equal(vm.runInNewContext(binding(indicatorQml, 'visible'), { count }), count > 0);
+    for (const showRunningIndicator of [true, false]) {
+      assert.equal(vm.runInNewContext(binding(iconIndicator, 'visible'), { root: { showRunningIndicator }, count }),
+        showRunningIndicator && count > 0, `${style}, count ${count}, enabled ${showRunningIndicator}`);
+    }
+    if (style === 'line' && count > 0) {
+      assert.ok(model > 0);
+      assert.equal(vm.runInNewContext(binding(indicatorQml, 'width'), { root: { style } }), 14);
+      assert.equal(vm.runInNewContext(binding(indicatorQml, 'height'), { root: { style } }), 2);
+    }
+  }
+}
+console.log('GNOME line, idle/running indicators for all styles, and hidden Applications checks passed');
 assert.doesNotMatch(iconQml, /Behavior\s+on\s+(?:width|height|magnifyScale)\b/);
 assert.match(dockSurfaceQml, /Behavior on x\s*\{\s*enabled: root\.draggingPinned/);
 assert.doesNotMatch(binding(dockSurfaceQml, 'implicitHeight'), /1\.55|magnif/);

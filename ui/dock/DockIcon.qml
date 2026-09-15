@@ -92,7 +92,7 @@ Item {
   }
 
   RunningIndicator {
-    visible: root.showRunningIndicator
+    visible: root.showRunningIndicator && count > 0
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     style: root.indicatorStyle
